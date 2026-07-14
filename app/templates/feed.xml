@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+<channel>
+  <title>Registro da Equipe</title>
+  <link>{{ base_url }}timeline</link>
+  <description>Diário de bordo público do squad. Escrito à mão, versionado no git.</description>
+  <language>pt-br</language>
+  <atom:link xmlns:atom="http://www.w3.org/2005/Atom" href="{{ base_url }}feed.xml" rel="self" type="application/rss+xml" />
+  {% for post in posts %}
+  <item>
+    <title>{{ post.title }}</title>
+    <link>{{ base_url }}timeline/{{ post.id }}</link>
+    <guid isPermaLink="true">{{ base_url }}timeline/{{ post.id }}</guid>
+    <pubDate>{{ post.pub_date }}</pubDate>
+    <author>{{ post.author_name }}</author>
+    <description>{{ post.summary }}</description>
+  </item>
+  {% endfor %}
+</channel>
+</rss>

@@ -66,6 +66,17 @@ CREATE TABLE IF NOT EXISTS card_tags (
     PRIMARY KEY (card_id, tech_tag_id)
 );
 
+CREATE TABLE IF NOT EXISTS learning_items (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    title TEXT NOT NULL,
+    type TEXT NOT NULL CHECK (type IN ('curso', 'palestra', 'livro', 'outro')),
+    description TEXT,
+    link TEXT,
+    consumed_at TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS roadmap_items (
     id INTEGER PRIMARY KEY,
     title TEXT NOT NULL,

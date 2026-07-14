@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Aprendizado{% endblock %}
+{% block content %}
+<main class="container" style="padding-top:48px;padding-bottom:72px">
+<div class="board-toolbar">
+    <h1>Aprendizado</h1>
+    <span class="subtitle">cursos, palestras e leituras — por pessoa</span>
+    <span class="spacer"></span>
+</div>
+
+<form class="board-filters" method="get" action="/aprendizado">
+    <select class="input" name="person" onchange="this.form.submit()">
+        <option value="">Todas as pessoas</option>
+        {% for u in all_users %}
+        <option value="{{ u.id }}" {% if filter_person == u.id %}selected{% endif %}>{{ u.name }}</option>
+        {% endfor %}
+    </select>
+    <span class="spacer"></span>
+    {% if user %}<a href="/aprendizado/new" class="btn btn-primary">Novo item</a>{% endif %}
+</form>
+
+<hr class="hr">
+
+{% for profile in profiles %}
+<section class="learning-profile">
+    <h2>{{ profile.name }}</h2>
+    <hr class="hr" style="margin:8px 0 var(--space-3)">
+    {% for item in profile['items'] %}
+    <div class="learning-item">
+        <div class="card-meta tnum">{{ item.consumed_at }} · <span class="tag tag-accent">{{ item.type_label }}</span></div>
+        <div class="card-title">{{ item.title }}</div>
+        {% if item.description %}<p class="card-body">{{ item.description }}</p>{% endif %}
+        {% if item.link %}<a href="{{ item.link }}" target="_blank" rel="noopener" class="btn btn-ghost" style="padding-inline:0">ver link →</a>{% endif %}
+        {% if user and (user.role == 'admin' or user.id == item.user_id) %}
+        <div class="item-actions">
+            <a href="/aprendizado/{{ item.id }}/edit">editar</a>
+            <form class="inline-form" method="post" action="/aprendizado/{{ item.id }}/delete" onsubmit="return confirm('Apagar este item?')">
+                <button type="submit" class="link-button" style="color:var(--color-neutral-600)">apagar</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    {% else %}
+    <p class="text-muted" style="font-style:italic">Nada registrado ainda.</p>
+    {% endfor %}
+</section>
+{% endfor %}
+
+</main>
+{% endblock %}

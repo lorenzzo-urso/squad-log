@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 
 from app.db import UPLOADS_DIR, init_db
-from app.routes import admin, auth, kanban, roadmap, timeline
+from app.routes import admin, auth, changelog, kanban, learning, roadmap, timeline
 
 app = FastAPI(title="Timeline do Squad")
 
@@ -30,3 +30,5 @@ app.include_router(timeline.router)
 app.include_router(kanban.router)
 app.include_router(roadmap.router)
 app.include_router(admin.router)
+app.include_router(changelog.router)
+app.include_router(learning.router)

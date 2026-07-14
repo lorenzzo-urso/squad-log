@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Changelog{% endblock %}
+{% block content %}
+<main>
+<article class="post-article">
+    <a href="/timeline" class="post-back">← todos os registros</a>
+    <div class="post-kicker">Squad-log</div>
+    <div class="post-body" style="text-align:left">{{ body_html | safe }}</div>
+</article>
+</main>
+{% endblock %}

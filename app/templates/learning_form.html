@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{% if editing %}Editar item{% else %}Novo item de aprendizado{% endif %}{% endblock %}
+{% block content %}
+<main class="dialog-page">
+<form class="dialog elev-lg" method="post"
+      action="{% if editing %}/aprendizado/{{ item.id }}/edit{% else %}/aprendizado{% endif %}">
+    <div class="dialog-title">{% if editing %}Editar item{% else %}Novo item de aprendizado{% endif %}</div>
+    <div class="field">
+        <label>Título</label>
+        <input class="input" type="text" name="title" value="{{ item.title }}" placeholder="Nome do curso, palestra ou livro" required>
+    </div>
+    <div class="field">
+        <label>Tipo</label>
+        <select class="input" name="type">
+            {% for t, label in types %}
+            <option value="{{ t }}" {% if item.type == t %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="field">
+        <label>Data</label>
+        <input class="input" type="date" name="consumed_at" value="{{ item.consumed_at }}" required>
+    </div>
+    <div class="field">
+        <label>Descrição (opcional)</label>
+        <textarea class="input" name="description" rows="3">{{ item.description or '' }}</textarea>
+    </div>
+    <div class="field">
+        <label>Link (opcional — certificado, página do curso...)</label>
+        <input class="input" type="url" name="link" value="{{ item.link or '' }}" placeholder="https://…">
+    </div>
+    <div class="dialog-actions">
+        <a href="/aprendizado" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">{% if editing %}Salvar{% else %}Adicionar{% endif %}</button>
+    </div>
+</form>
+</main>
+{% endblock %}

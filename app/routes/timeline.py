@@ -1,6 +1,8 @@
 import math
 import sqlite3
 import uuid
+from datetime import datetime, timezone
+from email.utils import format_datetime
 from pathlib import Path
 from typing import Optional
 
@@ -79,6 +81,25 @@ def timeline_list(
             "page": page,
             "total_pages": total_pages,
         },
+    )
+
+
+@router.get("/feed.xml")
+def feed(request: Request, conn: sqlite3.Connection = Depends(get_db)):
+    posts = conn.execute(
+        "SELECT posts.*, users.name AS author_name FROM posts "
+        "JOIN users ON users.id = posts.author_id "
+        "ORDER BY posts.created_at DESC LIMIT 20"
+    ).fetchall()
+    items = []
+    for p in posts:
+        created = datetime.strptime(p["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+        items.append({**dict(p), "pub_date": format_datetime(created)})
+    return templates.TemplateResponse(
+        request,
+        "feed.xml",
+        {"posts": items, "base_url": str(request.base_url)},
+        media_type="application/rss+xml",
     )
 
 

@@ -188,7 +188,7 @@ details form { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
 .featured { max-width: 1180px; margin: 0 auto; padding: 0 48px 40px; }
 .featured-card { flex-direction: row; gap: 0; padding: 0; overflow: hidden; background: var(--color-neutral-100); cursor: pointer; }
 .featured-cover { flex: 0 0 54%; min-height: 320px; position: relative; overflow: hidden; background: var(--color-surface); border-right: 1px solid var(--color-divider); background-image: var(--tex-hatch), var(--tex-dots); background-size: auto, 8px 8px; display: grid; place-items: center; }
-.featured-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.featured-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
 .featured-body { flex: 1; padding: 36px 38px; display: flex; flex-direction: column; }
 .featured-body h2 { font-size: 30px; margin: 10px 0 12px; line-height: 1.15; }
 .featured-body .card-body { font-size: 14px; line-height: 1.6; text-align: justify; margin: 0; }
@@ -201,7 +201,7 @@ details form { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
 .post-grid { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; padding: 0 48px 36px; }
 .post-card { padding: 0; overflow: hidden; cursor: pointer; }
 .post-cover { height: 170px; background: var(--color-surface); border-bottom: 1px solid var(--color-divider); display: grid; place-items: center; background-size: 7px 7px; }
-.post-cover img { width: 100%; height: 100%; object-fit: cover; }
+.post-cover img { width: 100%; height: 100%; object-fit: contain; }
 .post-cover.tex-dots { background-image: var(--tex-dots); }
 .post-cover.tex-hatch { background-image: var(--tex-hatch); background-size: auto; }
 .post-cover.tex-cross { background-image: var(--tex-cross); background-size: auto; }

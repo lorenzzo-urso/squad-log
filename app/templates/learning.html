@@ -10,7 +10,6 @@
 
 <form class="board-filters" method="get" action="/aprendizado">
     <select class="input" name="person" onchange="this.form.submit()">
-        <option value="">Todas as pessoas</option>
         {% for u in all_users %}
         <option value="{{ u.id }}" {% if filter_person == u.id %}selected{% endif %}>{{ u.name }}</option>
         {% endfor %}

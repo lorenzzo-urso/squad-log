@@ -28,22 +28,21 @@ def learning_list(
     user=Depends(get_current_user),
     conn: sqlite3.Connection = Depends(get_db),
 ):
-    person_id = _as_int(person)
     all_users = _all_users(conn)
     types_by_key = dict(TYPES)
 
+    person_id = _as_int(person)
+    if not person_id:
+        person_id = user["id"] if user else (all_users[0]["id"] if all_users else None)
+
     query = (
         "SELECT learning_items.*, users.name AS owner_name FROM learning_items "
-        "JOIN users ON users.id = learning_items.user_id"
+        "JOIN users ON users.id = learning_items.user_id WHERE learning_items.user_id = ? "
+        "ORDER BY learning_items.consumed_at DESC"
     )
-    params: list = []
-    if person_id:
-        query += " WHERE learning_items.user_id = ?"
-        params.append(person_id)
-    query += " ORDER BY learning_items.consumed_at DESC"
-    items = conn.execute(query, params).fetchall()
+    items = conn.execute(query, (person_id,)).fetchall() if person_id else []
 
-    profile_users = [u for u in all_users if not person_id or u["id"] == person_id]
+    profile_users = [u for u in all_users if u["id"] == person_id]
     profiles = {u["id"]: {"name": u["name"], "items": []} for u in profile_users}
     for item in items:
         if item["user_id"] in profiles:

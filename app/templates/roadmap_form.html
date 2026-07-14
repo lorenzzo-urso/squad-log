@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{% if editing %}Editar item{% else %}Novo item{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if editing %}Editar item{% else %}Novo item de roadmap{% endif %}</h1>
+<form class="card-form" method="post"
+      action="{% if editing %}/roadmap/items/{{ item.id }}/edit{% else %}/roadmap/items{% endif %}">
+    <label>Título
+        <input type="text" name="title" value="{{ item.title }}" required>
+    </label>
+    <label>Descrição
+        <textarea name="description" rows="4" required>{{ item.description }}</textarea>
+    </label>
+    <button type="submit">{% if editing %}Salvar{% else %}Criar{% endif %}</button>
+</form>
+{% endblock %}

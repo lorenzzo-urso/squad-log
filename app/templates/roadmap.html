@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Roadmap{% endblock %}
+{% block content %}
+<div class="board-toolbar">
+    <h1 style="margin:0">Roadmap do setor</h1>
+    <span class="spacer"></span>
+    {% if user %}<a class="button" href="/roadmap/new">Novo item</a>{% endif %}
+</div>
+
+<div class="board" data-reorder-url="/roadmap/reorder">
+    {% for status, label in columns %}
+    <div class="board-column" data-status="{{ status }}">
+        <h3>{{ label }}</h3>
+        {% for item in items_by_column[status] %}
+        <div class="board-card" data-id="{{ item.id }}" {% if user %}draggable="true"{% endif %}>
+            <div class="title">{{ item.title }}</div>
+            <div>{{ item.description }}</div>
+            {% if user %}
+            <div class="tags">
+                <a href="/roadmap/items/{{ item.id }}/edit">editar</a>
+                · <form class="inline-form" method="post" action="/roadmap/items/{{ item.id }}/delete" onsubmit="return confirm('Apagar item?')">
+                    <button type="submit" class="link-button">apagar</button>
+                </form>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+<script src="/static/board.js"></script>
+{% endblock %}

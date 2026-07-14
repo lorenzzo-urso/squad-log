@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{% if editing %}Editar card{% else %}Novo card{% endif %}{% endblock %}
+{% block content %}
+<h1>{% if editing %}Editar card{% else %}Novo card{% endif %}</h1>
+<form class="card-form" method="post"
+      action="{% if editing %}/kanban/cards/{{ card.id }}/edit{% else %}/kanban/cards{% endif %}">
+    <label>Título
+        <input type="text" name="title" value="{{ card.title }}" required>
+    </label>
+    <label>Descrição
+        <textarea name="description" rows="4">{{ card.description or '' }}</textarea>
+    </label>
+    <label>Produto/tecnologia
+        <select name="tech_tag_id" required>
+            {% for t in all_tags %}
+            <option value="{{ t.id }}" {% if card.tech_tag_id == t.id %}selected{% endif %}>{{ t.name }}</option>
+            {% endfor %}
+        </select>
+    </label>
+    <fieldset>
+        <legend>Responsáveis</legend>
+        {% for u in all_users %}
+        <label class="checkbox-row">
+            <input type="checkbox" name="responsible_ids" value="{{ u.id }}"
+                {% if u.id in responsible_ids %}checked{% endif %}>
+            {{ u.name }}
+        </label>
+        {% endfor %}
+    </fieldset>
+    <button type="submit">{% if editing %}Salvar{% else %}Criar{% endif %}</button>
+</form>
+{% endblock %}

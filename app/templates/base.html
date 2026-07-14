@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Timeline do Squad{% endblock %}</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="topnav">
+        <a class="brand" href="/">Timeline do Squad</a>
+        <a href="/timeline">Timeline</a>
+        <a href="/kanban">Kanban</a>
+        <a href="/roadmap">Roadmap</a>
+        {% if user %}
+            {% if user.role == 'admin' %}<a href="/admin">Admin</a>{% endif %}
+            <span class="spacer"></span>
+            <span class="whoami">{{ user.name }}</span>
+            <form method="post" action="/logout" class="inline-form">
+                <button type="submit" class="link-button">Sair</button>
+            </form>
+        {% else %}
+            <span class="spacer"></span>
+            <a href="/login">Entrar</a>
+        {% endif %}
+    </nav>
+    <main class="container">
+        {% if error %}<p class="flash error">{{ error }}</p>{% endif %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>

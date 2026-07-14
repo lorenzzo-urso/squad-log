@@ -1,0 +1,24 @@
+from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
+
+from app.db import UPLOADS_DIR, init_db
+from app.routes import admin, auth, kanban, roadmap, timeline
+
+app = FastAPI(title="Timeline do Squad")
+
+UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
+
+@app.on_event("startup")
+def on_startup():
+    init_db()
+
+
+app.mount("/static", StaticFiles(directory="app/static"), name="static")
+app.mount("/uploads", StaticFiles(directory=str(UPLOADS_DIR)), name="uploads")
+
+app.include_router(auth.router)
+app.include_router(timeline.router)
+app.include_router(kanban.router)
+app.include_router(roadmap.router)
+app.include_router(admin.router)

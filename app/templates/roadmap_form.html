@@ -1,15 +1,22 @@
 {% extends "base.html" %}
 {% block title %}{% if editing %}Editar item{% else %}Novo item{% endif %}{% endblock %}
 {% block content %}
-<h1>{% if editing %}Editar item{% else %}Novo item de roadmap{% endif %}</h1>
-<form class="card-form" method="post"
+<main class="dialog-page">
+<form class="dialog elev-lg" method="post"
       action="{% if editing %}/roadmap/items/{{ item.id }}/edit{% else %}/roadmap/items{% endif %}">
-    <label>Título
-        <input type="text" name="title" value="{{ item.title }}" required>
-    </label>
-    <label>Descrição
-        <textarea name="description" rows="4" required>{{ item.description }}</textarea>
-    </label>
-    <button type="submit">{% if editing %}Salvar{% else %}Criar{% endif %}</button>
+    <div class="dialog-title">{% if editing %}Editar item{% else %}Novo item de roadmap{% endif %}</div>
+    <div class="field">
+        <label>Título</label>
+        <input class="input" type="text" name="title" value="{{ item.title }}" required>
+    </div>
+    <div class="field">
+        <label>Descrição</label>
+        <textarea class="input" name="description" rows="4" required>{{ item.description }}</textarea>
+    </div>
+    <div class="dialog-actions">
+        <a href="/roadmap" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">{% if editing %}Salvar{% else %}Criar{% endif %}</button>
+    </div>
 </form>
+</main>
 {% endblock %}

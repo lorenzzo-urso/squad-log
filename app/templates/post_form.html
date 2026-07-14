@@ -1,22 +1,27 @@
 {% extends "base.html" %}
 {% block title %}{% if editing %}Editar entrega{% else %}Nova entrega{% endif %}{% endblock %}
 {% block content %}
-<h1>{% if editing %}Editar entrega{% else %}Nova entrega{% endif %}</h1>
-<form class="card-form" method="post"
+<main class="dialog-page">
+<form class="dialog elev-lg" method="post"
       action="{% if editing %}/posts/{{ post.id }}/edit{% else %}/posts{% endif %}"
       enctype="multipart/form-data">
-    <label>Título
-        <input type="text" name="title" value="{{ post.title }}" required>
-    </label>
-    <label>Resumo
-        <input type="text" name="summary" value="{{ post.summary }}" required>
-    </label>
-    <label>Corpo (markdown)
-        <textarea name="body" rows="10" required>{{ post.body }}</textarea>
-    </label>
-    <label>Capa (opcional, até 5MB)
-        <input type="file" name="cover" accept="image/*">
-    </label>
+    <div class="dialog-title">{% if editing %}Editar entrega{% else %}Nova entrega{% endif %}</div>
+    <div class="field">
+        <label>Título</label>
+        <input class="input" type="text" name="title" value="{{ post.title }}" required>
+    </div>
+    <div class="field">
+        <label>Resumo</label>
+        <input class="input" type="text" name="summary" value="{{ post.summary }}" required>
+    </div>
+    <div class="field">
+        <label>Corpo (markdown)</label>
+        <textarea class="input" name="body" rows="10" required>{{ post.body }}</textarea>
+    </div>
+    <div class="field">
+        <label>Capa (opcional, até 5MB)</label>
+        <input class="input" type="file" name="cover" accept="image/*">
+    </div>
     {% if all_users %}
     <fieldset>
         <legend>Coautores</legend>
@@ -29,6 +34,10 @@
         {% endfor %}
     </fieldset>
     {% endif %}
-    <button type="submit">{% if editing %}Salvar{% else %}Publicar{% endif %}</button>
+    <div class="dialog-actions">
+        <a href="/timeline" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary">{% if editing %}Salvar{% else %}Publicar{% endif %}</button>
+    </div>
 </form>
+</main>
 {% endblock %}

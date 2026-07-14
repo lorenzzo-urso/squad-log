@@ -1,14 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Entrar{% endblock %}
 {% block content %}
-<h1>Entrar</h1>
-<form class="card-form" method="post" action="/login">
-    <label>Email
-        <input type="email" name="email" required autofocus>
-    </label>
-    <label>Senha
-        <input type="password" name="password" required>
-    </label>
-    <button type="submit">Entrar</button>
-</form>
+<main class="login-wrap">
+    <div class="login-box">
+        <div class="login-rule"></div>
+        <h1>Entrar</h1>
+        <p class="text-muted subtitle">A leitura do log é aberta a toda a rede. O login é só para quem escreve.</p>
+        <form class="login-fields" method="post" action="/login">
+            <div class="field">
+                <label>Email</label>
+                <input class="input" type="email" name="email" placeholder="voce@empresa.com" required autofocus>
+            </div>
+            <div class="field" style="margin-bottom:0">
+                <label>Senha</label>
+                <input class="input" type="password" name="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+        </form>
+        <p class="text-muted login-note">Esqueceu a senha? Fale com o admin do squad — contas são criadas manualmente (máx. 4 usuários).</p>
+    </div>
+</main>
 {% endblock %}

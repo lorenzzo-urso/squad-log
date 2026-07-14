@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/classical-10e1a551-54a6-45ec-a0e2-f73dba96b0bf/styles.css">
+<script src="_ds/classical-10e1a551-54a6-45ec-a0e2-f73dba96b0bf/_ds_bundle.js"></script>
+<style>
+body{margin:0;background:var(--color-bg)}
+a{color:var(--color-accent)}a:hover{color:var(--color-accent-600)}
+</style>
+</helmet>
+
+<div style="min-height:100vh;display:flex;flex-direction:column;background:var(--color-bg)">
+
+<nav class="nav" data-screen-label="Navegação" style="position:sticky;top:0;background:color-mix(in srgb, var(--color-bg) 92%, transparent);backdrop-filter:blur(6px);z-index:10">
+  <a href="#" onClick="{{ goHome }}" class="nav-brand" style="display:flex;align-items:center;gap:8px;color:inherit;text-decoration:none">squad-log<span style="width:22px;height:1px;background:var(--color-accent)"></span></a>
+  <a href="#" onClick="{{ goHome }}" aria-current="{{ homeCurrent }}">Registros</a>
+  <a href="#" onClick="{{ goKanban }}" aria-current="{{ kanbanCurrent }}">Kanban</a>
+  <a href="#" onClick="{{ goRoadmap }}" aria-current="{{ roadmapCurrent }}">Roadmap</a>
+  <a href="#" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--color-neutral-700)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77 5.44 5.44 0 0 0 3.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>github</a>
+  <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{ false }}">
+    <span style="display:inline-flex;align-items:center;gap:12px;font-size:13px"><span class="text-muted">Lorenzzo</span><a href="#" onClick="{{ doLogout }}" style="font-size:13px">Sair</a></span>
+  </sc-if>
+  <sc-if value="{{ loggedOut }}" hint-placeholder-val="{{ true }}">
+    <a href="#" onClick="{{ goLogin }}" class="btn btn-primary" style="text-decoration:none">Entrar</a>
+  </sc-if>
+</nav>
+
+<!-- ═══════════ HOME ═══════════ -->
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<main data-screen-label="Home" style="flex:1">
+
+<div style="position:relative;text-align:center;padding:84px 40px 48px;overflow:hidden">
+  <div style="position:absolute;top:36px;right:16%;width:52px;height:30px;background-image:radial-gradient(circle, color-mix(in srgb, var(--color-text) 22%, transparent) 1px, transparent 1.3px);background-size:6px 6px;transform:rotate(-8deg)"></div>
+  <div style="position:absolute;top:88px;right:11%;width:26px;height:26px;border:1px solid var(--color-divider);transform:rotate(14deg);background-image:repeating-linear-gradient(45deg, color-mix(in srgb, var(--color-text) 14%, transparent) 0 1px, transparent 1px 5px)"></div>
+  <div style="position:absolute;top:120px;left:13%;width:44px;height:16px;background-image:repeating-linear-gradient(-45deg, color-mix(in srgb, var(--color-accent) 45%, transparent) 0 1px, transparent 1px 5px);transform:rotate(6deg)"></div>
+  <div style="font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--color-accent-700);margin-bottom:14px;font-feature-settings:'tnum'">Diário de bordo · Vol. I</div>
+  <h1 style="font-size:64px;font-weight:400;margin:0 0 18px">squad-<span style="background:var(--color-accent-200);padding:0 10px">log</span></h1>
+  <p class="text-muted" style="max-width:560px;margin:0 auto;font-size:15px">Registros do que construímos, quebramos e aprendemos — atualizações, mergulhos técnicos e o processo por trás de cada entrega do squad.</p>
+</div>
+
+<sc-if value="{{ showSearch }}" hint-placeholder-val="{{ true }}">
+<div style="max-width:1084px;margin:0 auto;padding:0 48px 32px;display:flex;gap:14px;align-items:center;justify-content:center">
+  <input class="input" placeholder="Buscar nos registros…" value="{{ query }}" onChange="{{ onQuery }}" style="max-width:340px">
+  <div class="seg">
+    <label class="seg-opt"><input type="radio" name="filtro" checked="{{ fAll }}" onChange="{{ setFAll }}">Todos</label>
+    <label class="seg-opt"><input type="radio" name="filtro" checked="{{ fTec }}" onChange="{{ setFTec }}">Técnico</label>
+    <label class="seg-opt"><input type="radio" name="filtro" checked="{{ fPro }}" onChange="{{ setFPro }}">Processo</label>
+    <label class="seg-opt"><input type="radio" name="filtro" checked="{{ fRet }}" onChange="{{ setFRet }}">Retro</label>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ showFeatured }}" hint-placeholder-val="{{ true }}">
+<div style="max-width:1180px;margin:0 auto;padding:0 48px 40px">
+  <div class="card elev-sm" style="flex-direction:row;gap:0;padding:0;overflow:hidden;background:var(--color-neutral-100);cursor:pointer" style-hover="box-shadow:var(--shadow-md)" onClick="{{ openFeatured }}">
+    <div style="flex:0 0 54%;min-height:320px;position:relative;background:var(--color-surface);border-right:1px solid var(--color-divider);background-image:repeating-linear-gradient(45deg, color-mix(in srgb, var(--color-text) 10%, transparent) 0 1px, transparent 1px 7px), radial-gradient(circle at 70% 30%, color-mix(in srgb, var(--color-text) 14%, transparent) 1px, transparent 1.4px);background-size:auto, 8px 8px">
+      <div style="position:absolute;inset:0;display:grid;place-items:center">
+        <div style="border:1px solid var(--color-divider);background:var(--color-bg);padding:10px 18px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-600)">capa · ilustração do registro</div>
+      </div>
+    </div>
+    <div style="flex:1;padding:36px 38px;display:flex;flex-direction:column">
+      <div class="card-meta" style="font-feature-settings:'tnum'">{{ featured.date }} · <span style="color:var(--color-text)">{{ featured.author }}</span></div>
+      <h2 style="font-size:30px;margin:10px 0 12px;line-height:1.15">{{ featured.title }}</h2>
+      <p class="card-body" style="font-size:14px;line-height:1.6;text-align:justify">{{ featured.excerpt }}</p>
+      <span class="btn btn-ghost" style="align-self:flex-start;margin-top:auto">ler registro →</span>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<div style="max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:0 48px 36px">
+  <sc-for list="{{ gridPosts }}" as="post" hint-placeholder-count="6">
+    <div class="card" style="padding:0;overflow:hidden;cursor:pointer" style-hover="box-shadow:var(--shadow-sm)" onClick="{{ post.open }}">
+      <div style="{{ post.coverStyle }}"><span style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-600);background:var(--color-bg);border:1px solid var(--color-divider);padding:6px 12px">capa</span></div>
+      <div style="padding:18px 20px 20px;display:flex;flex-direction:column;gap:8px;flex:1">
+        <div class="card-meta" style="font-feature-settings:'tnum'">{{ post.date }} · {{ post.author }}</div>
+        <div class="card-title" style="font-size:20px">{{ post.title }}</div>
+        <p class="card-body">{{ post.excerpt }}</p>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:auto">
+          <span class="btn btn-ghost" style="padding-inline:0">ler registro →</span>
+          <span class="tag tag-accent" style="margin-left:auto">{{ post.tag }}</span>
+        </div>
+      </div>
+    </div>
+  </sc-for>
+</div>
+
+<sc-if value="{{ emptyResults }}" hint-placeholder-val="{{ false }}">
+  <p class="text-muted" style="text-align:center;padding:8px 0 32px;font-style:italic">Nenhum registro encontrado para essa busca.</p>
+</sc-if>
+
+<div style="display:flex;justify-content:center;gap:8px;padding:4px 0 56px;font-feature-settings:'tnum'">
+  <sc-for list="{{ pages }}" as="pg" hint-placeholder-count="2">
+    <a href="#" onClick="{{ pg.go }}" style="{{ pg.style }}">{{ pg.label }}</a>
+  </sc-for>
+</div>
+
+</main>
+</sc-if>
+
+<!-- ═══════════ POST ═══════════ -->
+<sc-if value="{{ isPost }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Post" style="flex:1">
+<article style="max-width:680px;margin:0 auto;padding:64px 32px 72px">
+  <a href="#" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;gap:8px;font-size:13px;text-decoration:none;color:var(--color-neutral-700)" style-hover="color:var(--color-accent-600)">← todos os registros</a>
+  <div style="font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--color-accent-700);margin:36px 0 12px;font-feature-settings:'tnum'">Registro nº {{ current.num }}</div>
+  <h1 style="font-size:46px;font-weight:400;line-height:1.08;margin:0 0 16px">{{ current.title }}</h1>
+  <div class="card-meta" style="font-size:13px;font-feature-settings:'tnum'">Publicado em {{ current.date }} · por {{ current.author }} · <span class="tag tag-accent">{{ current.tag }}</span></div>
+  <div class="hr" style="margin:28px 0 32px"></div>
+
+  <p style="font-size:16px;line-height:1.75;text-align:justify">{{ current.excerpt }} Este é um texto de preenchimento aguardando o conteúdo real do repositório: o registro completo descreverá o contexto do problema, as alternativas que consideramos e o caminho que escolhemos — com os trechos de código e diagramas relevantes.</p>
+
+  <figure style="margin:36px 0">
+    <div style="height:300px;background:var(--color-surface);border:6px solid var(--color-surface);outline:1px solid var(--color-divider);background-image:radial-gradient(circle, color-mix(in srgb, var(--color-text) 15%, transparent) 1px, transparent 1.3px);background-size:8px 8px;display:grid;place-items:center"><span style="font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--color-neutral-600);background:var(--color-bg);border:1px solid var(--color-divider);padding:6px 12px">diagrama · ilustração</span></div>
+    <figcaption>Fig. 1 — placeholder para diagrama do registro.</figcaption>
+  </figure>
+
+  <h2 style="font-size:29px;margin:40px 0 14px">O contexto</h2>
+  <p style="font-size:16px;line-height:1.75;text-align:justify">Parágrafo de preenchimento. Aqui entra a descrição do estado anterior do sistema, as dores que motivaram o trabalho e as restrições que balizaram a decisão — em texto corrido, justificado, na medida confortável de leitura.</p>
+
+  <blockquote style="margin:32px 0;padding:4px 0 4px 24px;border-left:2px solid var(--color-accent);font-family:var(--font-heading);font-size:22px;line-height:1.35;font-style:italic">"Uma decisão registrada vale mais que dez lembradas."</blockquote>
+
+  <h2 style="font-size:29px;margin:40px 0 14px">O que fizemos</h2>
+  <p style="font-size:16px;line-height:1.75;text-align:justify">Segundo parágrafo de preenchimento. A narrativa do trabalho em si: as iterações, o que quebrou no caminho, os números que colhemos e o que fica de lição para o próximo registro do log.</p>
+
+  <div class="hr" style="margin:44px 0 24px"></div>
+  <div style="display:flex;justify-content:space-between;gap:24px">
+    <a href="#" onClick="{{ goHome }}" class="btn btn-secondary" style="text-decoration:none">← todos os registros</a>
+    <a href="#" onClick="{{ goRoadmap }}" class="btn btn-ghost" style="text-decoration:none">ver o roadmap →</a>
+  </div>
+</article>
+</main>
+</sc-if>
+
+<!-- ═══════════ ROADMAP ═══════════ -->
+<sc-if value="{{ isRoadmap }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Roadmap" style="flex:1">
+
+<div style="position:relative;text-align:center;padding:76px 40px 40px;overflow:hidden">
+  <div style="position:absolute;top:40px;right:18%;width:44px;height:24px;background-image:radial-gradient(circle, color-mix(in srgb, var(--color-text) 20%, transparent) 1px, transparent 1.3px);background-size:6px 6px;transform:rotate(-8deg)"></div>
+  <div style="position:absolute;top:110px;left:15%;width:40px;height:14px;background-image:repeating-linear-gradient(-45deg, color-mix(in srgb, var(--color-accent) 45%, transparent) 0 1px, transparent 1px 5px);transform:rotate(6deg)"></div>
+  <h1 style="font-size:54px;font-weight:400;margin:0 0 14px"><span style="background:var(--color-accent-200);padding:0 10px">Roadmap</span> do squad</h1>
+  <p class="text-muted" style="max-width:520px;margin:0 auto;font-size:15px">O que vem por aí e para onde estamos indo. O detalhe fino de cada entrega vive nos registros.</p>
+</div>
+
+<div style="max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:40px;padding:16px 48px 72px">
+  <sc-for list="{{ roadmapCols }}" as="col" hint-placeholder-count="3">
+    <div>
+      <div style="display:flex;align-items:center;gap:10px;padding-bottom:14px;border-bottom:1px solid var(--color-divider)">
+        <span style="width:28px;height:28px;border:1px solid var(--color-accent);border-radius:50%;display:grid;place-items:center;color:var(--color-accent);font-family:var(--font-heading);font-weight:600;font-size:13px;font-feature-settings:'tnum'">{{ col.n }}</span>
+        <h3 style="font-size:23px;margin:0">{{ col.name }}</h3>
+        <span class="text-muted" style="margin-left:auto;font-size:12px;font-feature-settings:'tnum'">{{ col.count }}</span>
+      </div>
+      <div style="display:flex;flex-direction:column">
+        <sc-for list="{{ col.items }}" as="it" hint-placeholder-count="3">
+          <div style="padding:18px 4px 18px 16px;border-left:1px solid var(--color-divider);margin-left:13px;position:relative" style-hover="background:color-mix(in srgb, var(--color-accent) 5%, transparent)">
+            <span style="{{ it.dotStyle }}"></span>
+            <div style="font-family:var(--font-heading);font-weight:600;font-size:17px">{{ it.title }}</div>
+            <p class="text-muted" style="font-size:13px;margin:5px 0 0;line-height:1.55">{{ it.desc }}</p>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-for>
+</div>
+</main>
+</sc-if>
+
+<!-- ═══════════ KANBAN ═══════════ -->
+<sc-if value="{{ isKanban }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Kanban" style="flex:1;width:100%;max-width:1180px;margin:0 auto;padding:56px 48px 72px;box-sizing:border-box">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+    <h1 style="font-size:44px;font-weight:400;margin:0">Kanban</h1>
+    <span class="text-muted" style="font-size:13px;font-style:italic">backlog operacional do squad</span>
+    <span style="flex:1"></span>
+    <select class="input" style="width:auto" value="{{ kbPerson }}" onChange="{{ onKbPerson }}">
+      <sc-for list="{{ personOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+    </select>
+    <select class="input" style="width:auto" value="{{ kbTag }}" onChange="{{ onKbTag }}">
+      <sc-for list="{{ tagFilterOptions }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}">{{ o.label }}</option></sc-for>
+    </select>
+    <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{ false }}"><a href="#" onClick="{{ openNew }}" class="btn btn-primary" style="text-decoration:none">Novo card</a></sc-if>
+  </div>
+  <sc-if value="{{ loggedOut }}" hint-placeholder-val="{{ false }}">
+    <p class="text-muted" style="font-size:12.5px;margin:10px 0 0">Leitura aberta a todos — <a href="#" onClick="{{ goLogin }}">entre</a> para criar, arrastar e editar cards.</p>
+  </sc-if>
+  <div class="hr" style="margin:24px 0 28px"></div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:24px;align-items:start">
+    <sc-for list="{{ kbCols }}" as="col" hint-placeholder-count="3">
+      <div style="border:1px solid var(--color-divider);border-radius:var(--radius-md);background:var(--color-neutral-100);min-height:360px;display:flex;flex-direction:column" onDragOver="{{ col.colDragOver }}" onDrop="{{ col.colDrop }}">
+        <div style="display:flex;align-items:baseline;gap:10px;padding:14px 16px;border-bottom:1px solid var(--color-divider)">
+          <span style="font-family:var(--font-heading);font-weight:600;color:var(--color-accent);font-feature-settings:'tnum'">{{ col.n }}</span>
+          <h3 style="font-size:19px;margin:0">{{ col.name }}</h3>
+          <span class="text-muted" style="margin-left:auto;font-size:11px;font-feature-settings:'tnum'">{{ col.count }}</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;padding:14px 14px 18px;flex:1">
+          <sc-for list="{{ col.cards }}" as="card" hint-placeholder-count="2">
+            <div class="card" draggable="{{ card.draggable }}" style="{{ card.cardStyle }}" onDragStart="{{ card.dragStart }}" onDragEnd="{{ card.dragEnd }}" onDragOver="{{ card.dragOverCard }}">
+              <div style="font-family:var(--font-heading);font-weight:600;font-size:16.5px;line-height:1.2">{{ card.title }}</div>
+              <sc-if value="{{ card.hasDesc }}" hint-placeholder-val="{{ false }}"><p class="text-muted" style="font-size:12.5px;margin:0;line-height:1.5">{{ card.desc }}</p></sc-if>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span class="tag tag-accent">{{ card.tag }}</span>
+                <span class="text-muted" style="font-size:11px">{{ card.respNames }}</span>
+              </div>
+              <sc-if value="{{ card.showActions }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;gap:12px;font-size:11.5px;border-top:1px solid var(--color-divider);padding-top:8px">
+                  <a href="#" onClick="{{ card.edit }}" style="text-decoration:none">editar</a>
+                  <sc-if value="{{ card.showPublish }}" hint-placeholder-val="{{ false }}"><a href="#" onClick="{{ card.publish }}" style="text-decoration:none">publicar como entrega</a></sc-if>
+                  <a href="#" onClick="{{ card.del }}" style="text-decoration:none;color:var(--color-neutral-600);margin-left:auto">apagar</a>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</main>
+</sc-if>
+
+<!-- ═══════════ LOGIN ═══════════ -->
+<sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+<main data-screen-label="Login" style="flex:1;display:grid;place-items:center;padding:88px 24px 104px">
+  <div style="width:380px;text-align:center">
+    <div style="width:56px;height:1px;background:var(--color-accent);margin:0 auto 24px"></div>
+    <h1 style="font-size:44px;font-weight:400;margin:0 0 8px">Entrar</h1>
+    <p class="text-muted" style="font-size:13.5px;margin:0 0 30px">A leitura do log é aberta a toda a rede. O login é só para quem escreve.</p>
+    <div style="text-align:left;display:flex;flex-direction:column;gap:16px">
+      <div class="field"><label>Email</label><input class="input" type="email" placeholder="voce@empresa.com" value="{{ email }}" onChange="{{ onEmail }}"></div>
+      <div class="field"><label>Senha</label><input class="input" type="password" placeholder="••••••••" value="{{ pwd }}" onChange="{{ onPwd }}"></div>
+      <a href="#" onClick="{{ doLogin }}" class="btn btn-primary btn-block" style="text-decoration:none">Entrar</a>
+    </div>
+    <p class="text-muted" style="font-size:11.5px;margin-top:22px;line-height:1.6">Esqueceu a senha? Fale com o admin do squad — contas são criadas manualmente (máx. 4 usuários).</p>
+  </div>
+</main>
+</sc-if>
+
+<!-- ═══════════ MODAL NOVO/EDITAR CARD ═══════════ -->
+<sc-if value="{{ modalOpen }}" hint-placeholder-val="{{ false }}">
+<div class="dialog-backdrop" style="position:fixed;z-index:40" onClick="{{ closeModal }}">
+  <div class="dialog elev-lg" onClick="{{ stopClick }}">
+    <div class="dialog-title">{{ modalTitle }}</div>
+    <div class="field"><label>Título</label><input class="input" value="{{ draftTitle }}" onChange="{{ onDraftTitle }}"></div>
+    <div class="field"><label>Descrição</label><textarea class="input" rows="3" value="{{ draftDesc }}" onChange="{{ onDraftDesc }}"></textarea></div>
+    <div class="field"><label>Produto/tecnologia</label>
+      <select class="input" value="{{ draftTag }}" onChange="{{ onDraftTag }}">
+        <sc-for list="{{ tagOptions }}" as="t" hint-placeholder-count="4"><option value="{{ t.name }}">{{ t.name }}</option></sc-for>
+      </select>
+    </div>
+    <div class="field"><label>Responsáveis</label>
+      <div style="display:flex;gap:24px;padding-top:4px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" style="accent-color:var(--color-accent)" checked="{{ draftRespLor }}" onChange="{{ toggleRespLor }}">Lorenzzo</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer"><input type="checkbox" style="accent-color:var(--color-accent)" checked="{{ draftRespMar }}" onChange="{{ toggleRespMar }}">Marina</label>
+      </div>
+    </div>
+    <div class="dialog-actions">
+      <a href="#" onClick="{{ closeModal }}" class="btn btn-secondary" style="text-decoration:none">Cancelar</a>
+      <a href="#" onClick="{{ saveDraftClick }}" class="btn btn-primary" style="text-decoration:none">{{ modalCta }}</a>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<footer data-screen-label="Rodapé" style="background:#232120;color:var(--color-neutral-200);padding:44px 48px 36px;position:relative;overflow:hidden">
+  <div style="position:absolute;inset:0;background-image:radial-gradient(circle, rgba(248,244,244,.07) 1px, transparent 1.3px);background-size:9px 9px;pointer-events:none"></div>
+  <div style="position:relative;max-width:1084px;margin:0 auto;display:flex;gap:64px;align-items:flex-start">
+    <div style="flex:1">
+      <div style="font-family:var(--font-heading);font-weight:600;font-size:20px;color:#f8f4f4">squad-log</div>
+      <p style="font-size:12.5px;color:var(--color-neutral-400);max-width:280px;margin-top:8px">Diário de bordo público do squad. Escrito à mão, versionado no git.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+      <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-400);margin-bottom:4px">Explorar</span>
+      <a href="#" onClick="{{ goHome }}" style="color:var(--color-neutral-300);text-decoration:none">Registros</a>
+      <a href="#" onClick="{{ goRoadmap }}" style="color:var(--color-neutral-300);text-decoration:none">Roadmap</a>
+      <a href="#" style="color:var(--color-neutral-300);text-decoration:none">Sobre o squad</a>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;font-size:13px">
+      <span style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-400);margin-bottom:4px">Contato</span>
+      <a href="#" style="color:var(--color-neutral-300);text-decoration:none">github.com/non-systematic-magic</a>
+      <a href="#" style="color:var(--color-neutral-300);text-decoration:none">squad@log.dev</a>
+    </div>
+  </div>
+</footer>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;1440px&quot;},&quot;showSearch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Home&quot;},&quot;showFeatured&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Home&quot;}}">
+const TEX = {
+  dots: 'radial-gradient(circle, color-mix(in srgb, var(--color-text) 16%, transparent) 1px, transparent 1.3px)',
+  hatch: 'repeating-linear-gradient(-45deg, color-mix(in srgb, var(--color-text) 12%, transparent) 0 1px, transparent 1px 6px)',
+  cross: 'repeating-linear-gradient(45deg, color-mix(in srgb, var(--color-text) 10%, transparent) 0 1px, transparent 1px 5px),repeating-linear-gradient(-45deg, color-mix(in srgb, var(--color-text) 10%, transparent) 0 1px, transparent 1px 5px)',
+  lines: 'repeating-linear-gradient(90deg, color-mix(in srgb, var(--color-text) 12%, transparent) 0 1px, transparent 1px 4px)'
+};
+
+const POSTS = [
+  { num:'12', date:'12 de julho, 2026', author:'Lorenzzo', tag:'técnico', tex:'hatch',
+    title:'Automatizando boletos com agentes — o Trilho A em produção',
+    excerpt:'Depois de três meses de iteração, o atendimento por e-mail movido a IA saiu do laboratório. Neste registro: a arquitetura final, o que descartamos no caminho e os números da primeira semana.' },
+  { num:'11', date:'28 de junho, 2026', author:'Squad', tag:'técnico', tex:'dots',
+    title:'RAG local para a base de conhecimento do squad',
+    excerpt:'Como indexamos dois anos de registros e decisões em uma busca semântica que roda inteira na máquina.' },
+  { num:'10', date:'15 de junho, 2026', author:'Lorenzzo', tag:'processo', tex:'hatch',
+    title:'Agentes revisando PRs: o que funcionou (e o que não)',
+    excerpt:'Seis semanas de revisão assistida por agentes no nosso fluxo. Métricas honestas e as regras que adotamos.' },
+  { num:'09', date:'02 de junho, 2026', author:'Squad', tag:'retro', tex:'cross',
+    title:'Retro do trimestre: nasce o squad-log',
+    excerpt:'Por que decidimos escrever em público, o que entra no log e o pacto de cadência que fizemos.' },
+  { num:'08', date:'19 de maio, 2026', author:'Lorenzzo', tag:'técnico', tex:'lines',
+    title:'Slack + JD Edwards: um bot que entende pedidos em linguagem natural',
+    excerpt:'NLU/NLG por LLM sobre Oracle ORDS. O desenho do pipeline e os casos que quase nos derrubaram.' },
+  { num:'07', date:'05 de maio, 2026', author:'Squad', tag:'processo', tex:'dots',
+    title:'Nosso pipeline de notícias com deduplicação por embedding',
+    excerpt:'Ingestão, dedupe e resumo automático de notícias de IA distribuídos via Discord — e o custo real disso.' },
+  { num:'06', date:'21 de abril, 2026', author:'Lorenzzo', tag:'técnico', tex:'cross',
+    title:'Local-first: por que nossos apps internos não têm backend',
+    excerpt:'A tese, os trade-offs e os padrões que repetimos em três produtos internos.' },
+  { num:'05', date:'07 de abril, 2026', author:'Squad', tag:'retro', tex:'hatch',
+    title:'Post-mortem: o incidente da fila de e-mails',
+    excerpt:'Quatro horas de fila parada, uma causa raiz boba e três guardas que agora existem por causa dela.' },
+  { num:'04', date:'24 de março, 2026', author:'Lorenzzo', tag:'técnico', tex:'dots',
+    title:'Overlay de estudo em tempo real com OBS e WebSockets',
+    excerpt:'KPIs ao vivo no stream de estudo: a arquitetura do cockpit e o que aprendemos sobre latência.' },
+  { num:'03', date:'10 de março, 2026', author:'Squad', tag:'processo', tex:'lines',
+    title:'Como documentamos decisões: ADRs no fluxo do dia a dia',
+    excerpt:'O template mínimo que fez ADR virar hábito em vez de burocracia.' },
+  { num:'02', date:'24 de fevereiro, 2026', author:'Lorenzzo', tag:'técnico', tex:'cross',
+    title:'Currículo sob medida com IA — o resume-tailor por dentro',
+    excerpt:'Adaptação de currículo para vagas com LLM local: prompt, avaliação e limites.' },
+  { num:'01', date:'10 de fevereiro, 2026', author:'Squad', tag:'retro', tex:'dots',
+    title:'Registro zero: quem somos e o que é este log',
+    excerpt:'O squad, as ferramentas e a promessa: um registro honesto por entrega, sem marketing.' }
+];
+
+const ROADMAP = [
+  { n:'I', name:'Backlog', items:[
+    { title:'Integração GitHub nos registros', desc:'Puxar diffs e PRs direto para dentro do corpo do post.', st:'open' },
+    { title:'Modo leitura offline', desc:'O log inteiro disponível como PWA, sem rede.', st:'open' },
+    { title:'Coleções temáticas', desc:'Agrupar registros por saga: agentes, local-first, incidentes.', st:'open' } ] },
+  { n:'II', name:'Em progresso', items:[
+    { title:'Busca de texto completo', desc:'Procurar em todo o conteúdo dos registros, não só títulos.', st:'doing' },
+    { title:'Ilustrações de capa', desc:'Uma ilustração a nanquim por registro, no estilo do log.', st:'doing' } ] },
+  { n:'III', name:'Entregue', items:[
+    { title:'squad-log v1', desc:'Home, registros e roadmap públicos, versionados no git.', st:'done' },
+    { title:'RSS', desc:'Assine o log no seu leitor de preferência.', st:'done' },
+    { title:'Filtro por tipo de registro', desc:'Técnico, processo e retro separados na home.', st:'done' } ] }
+];
+
+const PER_PAGE = 6;
+
+const USERS = ['Lorenzzo', 'Marina'];
+const TAGS = ['Dados', 'Slack', 'IA', 'Integração'];
+const KB_COLS = [['idea', 'Ideia'], ['doing', 'Em andamento'], ['done', 'Concluído']];
+let NEXT_ID = 100;
+const CARDS = [
+  { id: 1, title: 'Integração GitHub nos registros', desc: 'Puxar diffs e PRs para dentro do corpo do post.', tag: 'Integração', resp: ['Lorenzzo'], col: 'idea' },
+  { id: 2, title: 'Alertas de fila no Slack', desc: 'Avisar o canal quando a fila de e-mails passar do limite.', tag: 'Slack', resp: ['Marina'], col: 'idea' },
+  { id: 3, title: 'Dashboard de métricas do squad', desc: '', tag: 'Dados', resp: ['Lorenzzo', 'Marina'], col: 'idea' },
+  { id: 4, title: 'Busca de texto completo no log', desc: 'Procurar em todo o conteúdo dos registros.', tag: 'IA', resp: ['Lorenzzo'], col: 'doing' },
+  { id: 5, title: 'Bot Slack → JD Edwards v2', desc: 'Migrar o pipeline NLU para o novo ORDS.', tag: 'Integração', resp: ['Marina'], col: 'doing' },
+  { id: 6, title: 'Dedupe por embedding no NewsBot', desc: '', tag: 'IA', resp: ['Lorenzzo'], col: 'done' },
+  { id: 7, title: 'RSS do log', desc: '', tag: 'Dados', resp: ['Marina'], col: 'done' },
+  { id: 8, title: 'Filtro por tipo de registro', desc: 'Técnico, processo e retro na home.', tag: 'Dados', resp: ['Lorenzzo'], col: 'done' }
+];
+
+class Component extends DCLogic {
+  state = { page: 'home', current: null, query: '', filter: 'todos', pageNum: 1,
+    loggedIn: false, email: '', pwd: '', cards: CARDS, kbPerson: '', kbTag: '',
+    modalOpen: false, draft: null, draggedId: null };
+
+  nav(page, extra) {
+    this.setState({ page, ...extra });
+    window.scrollTo({ top: 0 });
+  }
+
+  openModal(card) {
+    const d = card
+      ? { id: card.id, title: card.title, desc: card.desc, tag: card.tag,
+          respLor: card.resp.includes('Lorenzzo'), respMar: card.resp.includes('Marina') }
+      : { id: null, title: '', desc: '', tag: TAGS[0], respLor: true, respMar: false };
+    this.setState({ modalOpen: true, draft: d });
+  }
+
+  setDraft(patch) { this.setState({ draft: { ...this.state.draft, ...patch } }); }
+
+  saveDraft() {
+    const d = this.state.draft;
+    if (!d || !d.title.trim()) return;
+    const resp = [d.respLor && 'Lorenzzo', d.respMar && 'Marina'].filter(Boolean);
+    if (!resp.length) resp.push('Lorenzzo');
+    let cards;
+    if (d.id != null) {
+      cards = this.state.cards.map(c => c.id === d.id ? { ...c, title: d.title, desc: d.desc, tag: d.tag, resp } : c);
+    } else {
+      cards = [...this.state.cards, { id: NEXT_ID++, title: d.title, desc: d.desc, tag: d.tag, resp, col: 'idea' }];
+    }
+    this.setState({ cards, modalOpen: false });
+  }
+
+  moveDragged(targetId, col) {
+    const { draggedId, cards } = this.state;
+    if (draggedId == null) return;
+    const dragged = cards.find(c => c.id === draggedId);
+    if (!dragged) return;
+    const rest = cards.filter(c => c.id !== draggedId);
+    const moved = { ...dragged, col };
+    if (targetId != null) {
+      const idx = rest.findIndex(c => c.id === targetId);
+      rest.splice(idx < 0 ? rest.length : idx, 0, moved);
+    } else {
+      rest.push(moved);
+    }
+    const same = rest.every((c, i) => c.id === cards[i].id && c.col === cards[i].col);
+    if (!same) this.setState({ cards: rest });
+  }
+
+  renderVals() {
+    const { page, current, query, filter, pageNum } = this.state;
+    const q = query.trim().toLowerCase();
+    const filtering = q !== '' || filter !== 'todos';
+
+    let list = POSTS.filter(p =>
+      (filter === 'todos' || p.tag === filter) &&
+      (q === '' || (p.title + ' ' + p.excerpt).toLowerCase().includes(q)));
+
+    const featured = POSTS[0];
+    const showFeatured = page === 'home' && !filtering && (this.props.showFeatured ?? true);
+    const gridSource = filtering ? list : POSTS.slice(1);
+    const totalPages = Math.max(1, Math.ceil(gridSource.length / PER_PAGE));
+    const pn = Math.min(pageNum, totalPages);
+    const pagePosts = gridSource.slice((pn - 1) * PER_PAGE, pn * PER_PAGE);
+
+    const mkPost = p => ({ ...p,
+      open: e => { e.preventDefault(); this.nav('post', { current: p }); },
+      coverStyle: {
+        height: 170, background: 'var(--color-surface)',
+        borderBottom: '1px solid var(--color-divider)',
+        backgroundImage: TEX[p.tex],
+        backgroundSize: p.tex === 'dots' ? '7px 7px' : 'auto',
+        display: 'grid', placeItems: 'center'
+      }
+    });
+
+    const pages = [];
+    for (let i = 1; i <= totalPages; i++) {
+      pages.push({
+        label: String(i),
+        go: e => { e.preventDefault(); this.setState({ pageNum: i }); window.scrollTo({ top: 0 }); },
+        style: {
+          width: 32, height: 32, display: 'grid', placeItems: 'center',
+          borderRadius: 'var(--radius-md)', fontSize: 13, textDecoration: i === pn ? 'none' : 'underline',
+          textUnderlineOffset: 3, fontFamily: i === pn ? 'var(--font-heading)' : 'inherit',
+          fontWeight: i === pn ? 600 : 400,
+          border: i === pn ? '1px solid var(--color-accent)' : '1px solid transparent',
+          color: i === pn ? 'var(--color-accent)' : 'var(--color-text)'
+        }
+      });
+    }
+    if (totalPages > 1 && pn < totalPages) {
+      pages.push({ label: '→',
+        go: e => { e.preventDefault(); this.setState({ pageNum: pn + 1 }); window.scrollTo({ top: 0 }); },
+        style: { width: 32, height: 32, display: 'grid', placeItems: 'center', color: 'var(--color-accent)', fontSize: 15, textDecoration: 'none' } });
+    }
+
+    const dotFor = st => ({
+      position: 'absolute', left: -5, top: 24, width: 9, height: 9, borderRadius: '50%',
+      background: st === 'done' ? 'var(--color-accent)' : 'var(--color-bg)',
+      border: '1.5px solid ' + (st === 'open' ? 'var(--color-neutral-400)' : 'var(--color-accent)')
+    });
+
+    const { loggedIn, cards, kbPerson, kbTag, modalOpen, draft, draggedId, email, pwd } = this.state;
+    const kbFiltered = cards.filter(c =>
+      (!kbPerson || c.resp.includes(kbPerson)) && (!kbTag || c.tag === kbTag));
+    const mkKb = c => ({
+      ...c,
+      hasDesc: !!c.desc,
+      respNames: c.resp.join(', '),
+      draggable: loggedIn,
+      showActions: loggedIn,
+      showPublish: loggedIn && c.col === 'done',
+      cardStyle: { opacity: draggedId === c.id ? 0.35 : 1, cursor: loggedIn ? 'grab' : 'default',
+        background: 'var(--color-bg)', padding: 'var(--space-3)' },
+      dragStart: () => this.setState({ draggedId: c.id }),
+      dragEnd: () => this.setState({ draggedId: null }),
+      dragOverCard: e => { e.preventDefault(); e.stopPropagation();
+        if (this.state.draggedId != null && this.state.draggedId !== c.id) this.moveDragged(c.id, c.col); },
+      edit: e => { e.preventDefault(); this.openModal(c); },
+      del: e => { e.preventDefault(); this.setState({ cards: this.state.cards.filter(x => x.id !== c.id) }); },
+      publish: e => { e.preventDefault(); this.nav('post', { current: { num: '—', date: 'rascunho de registro', author: 'Lorenzzo', tag: 'técnico', title: c.title, excerpt: c.desc || 'Resumo a escrever a partir do card concluído.' } }); }
+    });
+    const kbCols = KB_COLS.map(([key, name], i) => {
+      const cs = kbFiltered.filter(c => c.col === key).map(mkKb);
+      return { key, name, n: ['I', 'II', 'III'][i],
+        count: cs.length + (cs.length === 1 ? ' card' : ' cards'), cards: cs,
+        colDragOver: e => { e.preventDefault(); this.moveDragged(null, key); },
+        colDrop: e => e.preventDefault() };
+    });
+
+    return {
+      isHome: page === 'home', isPost: page === 'post', isRoadmap: page === 'roadmap',
+      isKanban: page === 'kanban', isLogin: page === 'login',
+      kanbanCurrent: page === 'kanban' ? 'page' : undefined,
+      goKanban: e => { e.preventDefault(); this.nav('kanban'); },
+      goLogin: e => { e.preventDefault(); this.nav('login'); },
+      loggedIn, loggedOut: !loggedIn,
+      doLogin: e => { e.preventDefault(); this.setState({ loggedIn: true, pwd: '' }); this.nav('kanban'); },
+      doLogout: e => { e.preventDefault(); this.setState({ loggedIn: false }); },
+      email, pwd,
+      onEmail: e => this.setState({ email: e.target.value }),
+      onPwd: e => this.setState({ pwd: e.target.value }),
+      kbPerson, kbTag,
+      onKbPerson: e => this.setState({ kbPerson: e.target.value }),
+      onKbTag: e => this.setState({ kbTag: e.target.value }),
+      personOptions: [{ v: '', label: 'Todas as pessoas' }, ...USERS.map(u => ({ v: u, label: u }))],
+      tagFilterOptions: [{ v: '', label: 'Todas as tecnologias' }, ...TAGS.map(t => ({ v: t, label: t }))],
+      kbCols,
+      openNew: e => { e.preventDefault(); this.openModal(null); },
+      modalOpen,
+      modalTitle: draft && draft.id != null ? 'Editar card' : 'Novo card',
+      modalCta: draft && draft.id != null ? 'Salvar' : 'Criar',
+      closeModal: e => { e.preventDefault(); this.setState({ modalOpen: false }); },
+      stopClick: e => e.stopPropagation(),
+      saveDraftClick: e => { e.preventDefault(); this.saveDraft(); },
+      draftTitle: draft ? draft.title : '', draftDesc: draft ? draft.desc : '', draftTag: draft ? draft.tag : TAGS[0],
+      draftRespLor: draft ? draft.respLor : false, draftRespMar: draft ? draft.respMar : false,
+      onDraftTitle: e => this.setDraft({ title: e.target.value }),
+      onDraftDesc: e => this.setDraft({ desc: e.target.value }),
+      onDraftTag: e => this.setDraft({ tag: e.target.value }),
+      tagOptions: TAGS.map(t => ({ name: t })),
+      toggleRespLor: () => this.setDraft({ respLor: !this.state.draft.respLor }),
+      toggleRespMar: () => this.setDraft({ respMar: !this.state.draft.respMar }),
+      homeCurrent: page === 'home' ? 'page' : undefined,
+      roadmapCurrent: page === 'roadmap' ? 'page' : undefined,
+      goHome: e => { e.preventDefault(); this.nav('home'); },
+      goRoadmap: e => { e.preventDefault(); this.nav('roadmap'); },
+      showSearch: this.props.showSearch ?? true,
+      query,
+      onQuery: e => this.setState({ query: e.target.value, pageNum: 1 }),
+      fAll: filter === 'todos', fTec: filter === 'técnico', fPro: filter === 'processo', fRet: filter === 'retro',
+      setFAll: () => this.setState({ filter: 'todos', pageNum: 1 }),
+      setFTec: () => this.setState({ filter: 'técnico', pageNum: 1 }),
+      setFPro: () => this.setState({ filter: 'processo', pageNum: 1 }),
+      setFRet: () => this.setState({ filter: 'retro', pageNum: 1 }),
+      showFeatured, featured,
+      openFeatured: e => { e.preventDefault(); this.nav('post', { current: featured }); },
+      gridPosts: pagePosts.map(mkPost),
+      emptyResults: filtering && list.length === 0,
+      pages: totalPages > 1 ? pages : [],
+      current: current || featured,
+      roadmapCols: ROADMAP.map(c => ({ ...c, count: c.items.length + (c.items.length === 1 ? ' item' : ' itens'),
+        items: c.items.map(it => ({ ...it, dotStyle: dotFor(it.st) })) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

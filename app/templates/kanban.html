@@ -1,55 +1,72 @@
 {% extends "base.html" %}
 {% block title %}Kanban{% endblock %}
 {% block content %}
+<main class="container">
 <div class="board-toolbar">
-    <h1 style="margin:0">Kanban</h1>
+    <h1>Kanban</h1>
+    <span class="subtitle">backlog operacional do squad</span>
     <span class="spacer"></span>
-    {% if user %}<a class="button" href="/kanban/new">Novo card</a>{% endif %}
 </div>
 
-<form class="board-toolbar" method="get" action="/kanban">
-    <select name="person" onchange="this.form.submit()">
+<form class="board-filters" method="get" action="/kanban">
+    <select class="input" name="person" onchange="this.form.submit()">
         <option value="">Todas as pessoas</option>
         {% for u in all_users %}
         <option value="{{ u.id }}" {% if filter_person == u.id %}selected{% endif %}>{{ u.name }}</option>
         {% endfor %}
     </select>
-    <select name="tag" onchange="this.form.submit()">
+    <select class="input" name="tag" onchange="this.form.submit()">
         <option value="">Todas as tecnologias</option>
         {% for t in all_tags %}
         <option value="{{ t.id }}" {% if filter_tag == t.id %}selected{% endif %}>{{ t.name }}</option>
         {% endfor %}
     </select>
+    <span class="spacer"></span>
+    {% if user %}<a href="/kanban/new" class="btn btn-primary">Novo card</a>{% endif %}
 </form>
+{% if not user %}
+<p class="text-muted board-note">Leitura aberta a todos — <a href="/login">entre</a> para criar, arrastar e editar cards.</p>
+{% endif %}
+
+<hr class="hr">
 
 <div class="board" data-reorder-url="/kanban/reorder">
+    {% set romans = {'idea': 'I', 'doing': 'II', 'done': 'III'} %}
     {% for status, label in columns %}
     <div class="board-column" data-status="{{ status }}">
-        <h3>{{ label }}</h3>
-        {% for card in cards_by_column[status] %}
-        <div class="board-card" data-id="{{ card.id }}" {% if user %}draggable="true"{% endif %}>
-            <div class="title">{{ card.title }}</div>
-            {% if card.description %}<div>{{ card.description }}</div>{% endif %}
-            <div class="tags">
-                {{ card.tech_tag_name }} · {{ card.responsibles | map(attribute='name') | join(', ') }}
-            </div>
-            {% if user %}
-            <div class="tags">
-                <a href="/kanban/cards/{{ card.id }}/edit">editar</a>
-                {% if status == 'done' %}
-                · <form class="inline-form" method="post" action="/kanban/cards/{{ card.id }}/publish">
-                    <button type="submit" class="link-button">publicar como entrega</button>
-                </form>
-                {% endif %}
-                · <form class="inline-form" method="post" action="/kanban/cards/{{ card.id }}/delete" onsubmit="return confirm('Apagar card?')">
-                    <button type="submit" class="link-button">apagar</button>
-                </form>
-            </div>
-            {% endif %}
+        <div class="board-column-header">
+            <span class="roman tnum">{{ romans[status] }}</span>
+            <h3>{{ label }}</h3>
+            <span class="count tnum">{{ cards_by_column[status] | length }} card{{ 's' if cards_by_column[status] | length != 1 else '' }}</span>
         </div>
-        {% endfor %}
+        <div class="board-column-body">
+            {% for card in cards_by_column[status] %}
+            <div class="board-card" data-id="{{ card.id }}" {% if user %}draggable="true"{% endif %}>
+                <div class="title">{{ card.title }}</div>
+                {% if card.description %}<p class="desc">{{ card.description }}</p>{% endif %}
+                <div class="meta-row">
+                    <span class="tag tag-accent">{{ card.tech_tag_name }}</span>
+                    <span class="text-muted">{{ card.responsibles | map(attribute='name') | join(', ') }}</span>
+                </div>
+                {% if user %}
+                <div class="card-actions">
+                    <a href="/kanban/cards/{{ card.id }}/edit">editar</a>
+                    {% if status == 'done' %}
+                    <form class="inline-form" method="post" action="/kanban/cards/{{ card.id }}/publish">
+                        <button type="submit" class="link-button">publicar como entrega</button>
+                    </form>
+                    {% endif %}
+                    <form class="inline-form danger" method="post" action="/kanban/cards/{{ card.id }}/delete" onsubmit="return confirm('Apagar card?')">
+                        <button type="submit" class="link-button" style="color:var(--color-neutral-600)">apagar</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
     </div>
     {% endfor %}
 </div>
+</main>
 <script src="/static/board.js"></script>
 {% endblock %}

@@ -49,6 +49,18 @@ def create_user(
     return RedirectResponse("/admin", status_code=303)
 
 
+@router.post("/admin/users/{user_id}/rename")
+def rename_user(
+    user_id: int,
+    name: str = Form(...),
+    user=Depends(require_admin),
+    conn: sqlite3.Connection = Depends(get_db),
+):
+    conn.execute("UPDATE users SET name = ? WHERE id = ?", (name, user_id))
+    conn.commit()
+    return RedirectResponse("/admin", status_code=303)
+
+
 @router.post("/admin/users/{user_id}/reset-password")
 def reset_password(
     user_id: int,

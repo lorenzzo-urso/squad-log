@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Admin{% endblock %}
 {% block content %}
+<main class="container" style="padding-top:48px;padding-bottom:72px">
 <h1>Admin</h1>
 
 <h2>Usuários ({{ users | length }}/{{ max_users }})</h2>
@@ -13,10 +14,17 @@
         <td>{{ u.role }}</td>
         <td>
             <details>
-                <summary>Resetar senha</summary>
+                <summary style="cursor:pointer;color:var(--color-accent);font-size:13px">Editar nome</summary>
+                <form method="post" action="/admin/users/{{ u.id }}/rename">
+                    <input class="input" style="width:auto" type="text" name="name" value="{{ u.name }}" required>
+                    <button type="submit" class="btn btn-secondary">Salvar</button>
+                </form>
+            </details>
+            <details>
+                <summary style="cursor:pointer;color:var(--color-accent);font-size:13px">Resetar senha</summary>
                 <form method="post" action="/admin/users/{{ u.id }}/reset-password">
-                    <input type="password" name="password" placeholder="Nova senha" required>
-                    <button type="submit">Resetar</button>
+                    <input class="input" style="width:auto" type="password" name="password" placeholder="Nova senha" required>
+                    <button type="submit" class="btn btn-secondary">Resetar</button>
                 </form>
             </details>
             {% if u.id != user.id %}
@@ -31,34 +39,36 @@
 
 {% if users | length < max_users %}
 <h3>Novo usuário</h3>
-<form class="card-form" method="post" action="/admin/users">
-    <label>Nome<input type="text" name="name" required></label>
-    <label>Email<input type="email" name="email" required></label>
-    <label>Senha<input type="password" name="password" required></label>
-    <label>Papel
-        <select name="role">
+<form style="max-width:420px" method="post" action="/admin/users">
+    <div class="field"><label>Nome</label><input class="input" type="text" name="name" required></div>
+    <div class="field"><label>Email</label><input class="input" type="email" name="email" required></div>
+    <div class="field"><label>Senha</label><input class="input" type="password" name="password" required></div>
+    <div class="field">
+        <label>Papel</label>
+        <select class="input" name="role">
             <option value="membro">Membro</option>
             <option value="admin">Admin</option>
         </select>
-    </label>
-    <button type="submit">Criar</button>
+    </div>
+    <button type="submit" class="btn btn-primary">Criar</button>
 </form>
 {% else %}
-<p>Limite de {{ max_users }} usuários atingido.</p>
+<p class="text-muted">Limite de {{ max_users }} usuários atingido.</p>
 {% endif %}
 
-<h2>Tags de produto/tecnologia</h2>
-<ul>
+<h2 style="margin-top:var(--space-8)">Tags de produto/tecnologia</h2>
+<ul style="list-style:none;padding:0;display:flex;flex-direction:column;gap:8px">
     {% for t in tags %}
-    <li>{{ t.name }}
+    <li><span class="tag tag-accent">{{ t.name }}</span>
         <form class="inline-form" method="post" action="/admin/tags/{{ t.id }}/delete" onsubmit="return confirm('Remover tag?')">
             <button type="submit" class="link-button">remover</button>
         </form>
     </li>
     {% endfor %}
 </ul>
-<form class="card-form" method="post" action="/admin/tags">
-    <label>Nova tag<input type="text" name="name" required></label>
-    <button type="submit">Adicionar</button>
+<form style="max-width:420px;display:flex;gap:8px;align-items:flex-end" method="post" action="/admin/tags">
+    <div class="field" style="flex:1;margin-bottom:0"><label>Nova tag</label><input class="input" type="text" name="name" required></div>
+    <button type="submit" class="btn btn-primary">Adicionar</button>
 </form>
+</main>
 {% endblock %}

@@ -3,30 +3,52 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}Timeline do Squad{% endblock %}</title>
+    <title>{% block title %}Registro da Equipe{% endblock %}</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <nav class="topnav">
-        <a class="brand" href="/">Timeline do Squad</a>
-        <a href="/timeline">Timeline</a>
-        <a href="/kanban">Kanban</a>
-        <a href="/roadmap">Roadmap</a>
+    <nav class="nav">
+        <a href="/" class="nav-brand">Registro da Equipe<span class="rule"></span></a>
+        <a href="/timeline" {% if request.url.path.startswith('/timeline') or request.url.path == '/' %}aria-current="page"{% endif %}>Registros</a>
+        <a href="/kanban" {% if request.url.path.startswith('/kanban') %}aria-current="page"{% endif %}>Kanban</a>
+        <a href="/roadmap" {% if request.url.path.startswith('/roadmap') %}aria-current="page"{% endif %}>Roadmap</a>
+        <a href="https://github.com/Non-Systematic-Magic/squad-log" class="muted-link" target="_blank" rel="noopener">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77 5.44 5.44 0 0 0 3.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+            github
+        </a>
         {% if user %}
-            {% if user.role == 'admin' %}<a href="/admin">Admin</a>{% endif %}
-            <span class="spacer"></span>
-            <span class="whoami">{{ user.name }}</span>
-            <form method="post" action="/logout" class="inline-form">
-                <button type="submit" class="link-button">Sair</button>
-            </form>
+            {% if user.role == 'admin' %}<a href="/admin" {% if request.url.path.startswith('/admin') %}aria-current="page"{% endif %}>Admin</a>{% endif %}
+            <span class="who">
+                <span class="text-muted">{{ user.name }}</span>
+                <form method="post" action="/logout" class="inline-form">
+                    <button type="submit" class="link-button">Sair</button>
+                </form>
+            </span>
         {% else %}
-            <span class="spacer"></span>
-            <a href="/login">Entrar</a>
+            <a href="/login" class="btn btn-primary">Entrar</a>
         {% endif %}
     </nav>
-    <main class="container">
-        {% if error %}<p class="flash error">{{ error }}</p>{% endif %}
-        {% block content %}{% endblock %}
-    </main>
+
+    {% if error %}<p class="flash error">{{ error }}</p>{% endif %}
+    {% block content %}{% endblock %}
+
+    <footer class="site-footer">
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <div class="name">Registro da Equipe</div>
+                <p>Diário de bordo público do squad. Escrito à mão, versionado no git.</p>
+            </div>
+            <div class="footer-col">
+                <span class="col-title">Explorar</span>
+                <a href="/timeline">Registros</a>
+                <a href="/roadmap">Roadmap</a>
+                <a href="/kanban">Kanban</a>
+            </div>
+            <div class="footer-col">
+                <span class="col-title">Contato</span>
+                <a href="https://github.com/Non-Systematic-Magic/squad-log" target="_blank" rel="noopener">github.com/non-systematic-magic</a>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

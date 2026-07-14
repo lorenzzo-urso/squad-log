@@ -1,3 +1,4 @@
+import math
 import sqlite3
 import uuid
 from pathlib import Path
@@ -15,6 +16,7 @@ router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
 MAX_COVER_BYTES = 5 * 1024 * 1024
+PER_PAGE = 6
 
 
 def _all_users(conn: sqlite3.Connection):
@@ -36,17 +38,47 @@ def home():
 
 
 @router.get("/timeline", response_class=HTMLResponse)
-def timeline_list(request: Request, user=Depends(get_current_user), conn: sqlite3.Connection = Depends(get_db)):
+def timeline_list(
+    request: Request,
+    q: str = "",
+    page: int = 1,
+    user=Depends(get_current_user),
+    conn: sqlite3.Connection = Depends(get_db),
+):
     posts = conn.execute(
         "SELECT posts.*, users.name AS author_name FROM posts "
         "JOIN users ON users.id = posts.author_id "
         "ORDER BY posts.created_at DESC"
     ).fetchall()
-    posts_with_coauthors = [
-        {**dict(p), "coauthors": _post_coauthors(conn, p["id"])} for p in posts
-    ]
+    posts = [{**dict(p), "coauthors": _post_coauthors(conn, p["id"])} for p in posts]
+
+    query = q.strip()
+    filtering = bool(query)
+    if filtering:
+        needle = query.lower()
+        grid_source = [p for p in posts if needle in (p["title"] + " " + p["summary"]).lower()]
+        featured = None
+    else:
+        grid_source = posts[1:]
+        featured = posts[0] if posts else None
+
+    total_pages = max(1, math.ceil(len(grid_source) / PER_PAGE))
+    page = min(max(page, 1), total_pages)
+    grid_posts = grid_source[(page - 1) * PER_PAGE : page * PER_PAGE]
+
     return templates.TemplateResponse(
-        request, "timeline_list.html", {"user": user, "posts": posts_with_coauthors}
+        request,
+        "timeline_list.html",
+        {
+            "user": user,
+            "featured": featured,
+            "grid_posts": grid_posts,
+            "query": query,
+            "filtering": filtering,
+            "empty": filtering and not grid_source,
+            "page": page,
+            "total_pages": total_pages,
+        },
     )
 
 

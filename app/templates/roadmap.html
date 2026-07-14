@@ -1,32 +1,51 @@
 {% extends "base.html" %}
 {% block title %}Roadmap{% endblock %}
 {% block content %}
-<div class="board-toolbar">
-    <h1 style="margin:0">Roadmap do setor</h1>
-    <span class="spacer"></span>
-    {% if user %}<a class="button" href="/roadmap/new">Novo item</a>{% endif %}
+<main>
+
+<div class="hero hero-sm">
+    <div class="scribble" style="top:40px;right:18%;width:44px;height:24px;background-image:var(--tex-dots);background-size:6px 6px;transform:rotate(-8deg)"></div>
+    <div class="scribble" style="top:110px;left:15%;width:40px;height:14px;background-image:repeating-linear-gradient(-45deg, color-mix(in srgb, var(--color-accent) 45%, transparent) 0 1px, transparent 1px 5px);transform:rotate(6deg)"></div>
+    <h1><span class="mark">Roadmap</span> do squad</h1>
+    <p class="text-muted">O que vem por aí e para onde estamos indo. O detalhe fino de cada entrega vive nos registros.</p>
 </div>
 
-<div class="board" data-reorder-url="/roadmap/reorder">
+{% if user %}
+<div class="container" style="padding-bottom:0;text-align:right">
+    <a href="/roadmap/new" class="btn btn-primary">Novo item</a>
+</div>
+{% endif %}
+
+<div class="board roadmap-board" data-reorder-url="/roadmap/reorder">
+    {% set romans = {'planned': 'I', 'doing': 'II', 'shipped': 'III'} %}
+    {% set dot_class = {'planned': 'planned', 'doing': 'doing', 'shipped': 'shipped'} %}
     {% for status, label in columns %}
-    <div class="board-column" data-status="{{ status }}">
-        <h3>{{ label }}</h3>
-        {% for item in items_by_column[status] %}
-        <div class="board-card" data-id="{{ item.id }}" {% if user %}draggable="true"{% endif %}>
-            <div class="title">{{ item.title }}</div>
-            <div>{{ item.description }}</div>
-            {% if user %}
-            <div class="tags">
-                <a href="/roadmap/items/{{ item.id }}/edit">editar</a>
-                · <form class="inline-form" method="post" action="/roadmap/items/{{ item.id }}/delete" onsubmit="return confirm('Apagar item?')">
-                    <button type="submit" class="link-button">apagar</button>
-                </form>
-            </div>
-            {% endif %}
+    <div class="board-column roadmap-column" data-status="{{ status }}">
+        <div class="board-column-header roadmap-col-header">
+            <span class="roman-circle tnum">{{ romans[status] }}</span>
+            <h3>{{ label }}</h3>
+            <span class="count tnum">{{ items_by_column[status] | length }} item{{ 's' if items_by_column[status] | length != 1 else '' }}</span>
         </div>
-        {% endfor %}
+        <div class="roadmap-items">
+            {% for item in items_by_column[status] %}
+            <div class="board-card roadmap-item" data-id="{{ item.id }}" {% if user %}draggable="true"{% endif %}>
+                <span class="dot {{ dot_class[status] }}"></span>
+                <div class="item-title">{{ item.title }}</div>
+                <p class="item-desc text-muted">{{ item.description }}</p>
+                {% if user %}
+                <div class="roadmap-item-actions">
+                    <a href="/roadmap/items/{{ item.id }}/edit">editar</a>
+                    <form class="inline-form" method="post" action="/roadmap/items/{{ item.id }}/delete" onsubmit="return confirm('Apagar item?')">
+                        <button type="submit" class="link-button" style="color:var(--color-neutral-600)">apagar</button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
     </div>
     {% endfor %}
 </div>
+</main>
 <script src="/static/board.js"></script>
 {% endblock %}

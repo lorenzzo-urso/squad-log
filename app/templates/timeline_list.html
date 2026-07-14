@@ -1,22 +1,83 @@
 {% extends "base.html" %}
-{% block title %}Timeline{% endblock %}
+{% block title %}Registro da Equipe{% endblock %}
 {% block content %}
-<div class="board-toolbar">
-    <h1 style="margin:0">Timeline</h1>
-    <span class="spacer"></span>
-    {% if user %}<a class="button" href="/posts/new">Nova entrega</a>{% endif %}
+<main>
+
+<div class="hero">
+    <div class="scribble" style="top:36px;right:16%;width:52px;height:30px;background-image:var(--tex-dots);background-size:6px 6px;transform:rotate(-8deg)"></div>
+    <div class="scribble" style="top:88px;right:11%;width:26px;height:26px;border:1px solid var(--color-divider);transform:rotate(14deg);background-image:var(--tex-hatch)"></div>
+    <div class="scribble" style="top:120px;left:13%;width:44px;height:16px;background-image:repeating-linear-gradient(-45deg, color-mix(in srgb, var(--color-accent) 45%, transparent) 0 1px, transparent 1px 5px);transform:rotate(6deg)"></div>
+    <div class="hero-kicker tnum">Diário de bordo · Vol. I</div>
+    <h1>Registro da <span class="mark">Equipe</span></h1>
+    <p class="text-muted">Registros do que construímos, quebramos e aprendemos — atualizações, mergulhos técnicos e o processo por trás de cada entrega do squad.</p>
 </div>
 
-{% for post in posts %}
-<article class="post-item">
-    <h2><a href="/timeline/{{ post.id }}">{{ post.title }}</a></h2>
-    <div class="post-meta">
-        {{ post.created_at }} · {{ post.author_name }}
-        {% if post.coauthors %}& {{ post.coauthors | map(attribute='name') | join(', ') }}{% endif %}
-    </div>
-    <p>{{ post.summary }}</p>
-</article>
-{% else %}
-<p>Nenhuma entrega publicada ainda.</p>
-{% endfor %}
+<form class="timeline-toolbar" method="get" action="/timeline">
+    <input class="input" type="text" name="q" placeholder="Buscar nos registros…" value="{{ query }}">
+    <button type="submit" class="btn btn-secondary">Buscar</button>
+    {% if filtering %}<a href="/timeline" class="btn btn-ghost">limpar</a>{% endif %}
+    {% if user %}<a href="/posts/new" class="btn btn-primary">novo registro</a>{% endif %}
+</form>
+
+{% if featured %}
+<div class="featured">
+    <a href="/timeline/{{ featured.id }}" class="card elev-sm featured-card" style="display:flex">
+        <div class="featured-cover">
+            {% if featured.cover_path %}
+            <img src="/uploads/{{ featured.cover_path }}" alt="" style="width:100%;height:100%;object-fit:cover">
+            {% else %}
+            <span class="cover-label">capa · ilustração do registro</span>
+            {% endif %}
+        </div>
+        <div class="featured-body">
+            <div class="card-meta tnum">{{ featured.created_at }} · <span style="color:var(--color-text)">{{ featured.author_name }}</span></div>
+            <h2>{{ featured.title }}</h2>
+            <p class="card-body">{{ featured.summary }}</p>
+            <span class="btn btn-ghost">ler registro →</span>
+        </div>
+    </a>
+</div>
+{% endif %}
+
+<div class="post-grid">
+    {% set textures = ['tex-dots', 'tex-hatch', 'tex-cross', 'tex-lines'] %}
+    {% for post in grid_posts %}
+    <a href="/timeline/{{ post.id }}" class="card post-card">
+        <div class="post-cover {{ textures[loop.index0 % 4] }}">
+            {% if post.cover_path %}
+            <img src="/uploads/{{ post.cover_path }}" alt="">
+            {% else %}
+            <span class="cover-label sm">capa</span>
+            {% endif %}
+        </div>
+        <div class="post-card-body">
+            <div class="card-meta tnum">{{ post.created_at }} · {{ post.author_name }}</div>
+            <div class="card-title">{{ post.title }}</div>
+            <p>{{ post.summary }}</p>
+            <div class="post-card-footer">
+                <span class="btn btn-ghost" style="padding-inline:0">ler registro →</span>
+            </div>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+{% if empty %}
+<p class="text-muted empty-note">Nenhum registro encontrado para essa busca.</p>
+{% elif not featured and not grid_posts %}
+<p class="text-muted empty-note">Nenhum registro publicado ainda.</p>
+{% endif %}
+
+{% if total_pages > 1 %}
+<div class="pagination tnum">
+    {% for p in range(1, total_pages + 1) %}
+    <a href="/timeline?q={{ query }}&page={{ p }}" class="page-item {% if p == page %}current{% endif %}">{{ p }}</a>
+    {% endfor %}
+    {% if page < total_pages %}
+    <a href="/timeline?q={{ query }}&page={{ page + 1 }}" class="page-item next">→</a>
+    {% endif %}
+</div>
+{% endif %}
+
+</main>
 {% endblock %}

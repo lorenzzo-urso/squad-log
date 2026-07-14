@@ -1,25 +1,38 @@
 {% extends "base.html" %}
 {% block title %}{{ post.title }}{% endblock %}
 {% block content %}
-<p><a href="/timeline">&larr; Timeline</a></p>
-<article>
+<main>
+<article class="post-article">
+    <a href="/timeline" class="post-back">← todos os registros</a>
+    <div class="post-kicker tnum">Registro nº {{ post.id }}</div>
     <h1>{{ post.title }}</h1>
-    <div class="post-meta">
-        {{ post.created_at }} · {{ post.author_name }}
+    <div class="card-meta tnum">
+        Publicado em {{ post.created_at }} · por {{ post.author_name }}
         {% if post.coauthors %}& {{ post.coauthors | map(attribute='name') | join(', ') }}{% endif %}
     </div>
+    <hr class="hr">
+
     {% if post.cover_path %}
-    <img class="post-cover" src="/uploads/{{ post.cover_path }}" alt="">
+    <figure class="post-article-cover">
+        <img class="plate" src="/uploads/{{ post.cover_path }}" alt="">
+    </figure>
     {% endif %}
+
     <div class="post-body">{{ post.body_html | safe }}</div>
 
+    <div class="post-actions">
+        <a href="/timeline" class="btn btn-secondary">← todos os registros</a>
+        <a href="/roadmap" class="btn btn-ghost">ver o roadmap →</a>
+    </div>
+
     {% if user and user.role == 'admin' %}
-    <p>
-        <a class="button secondary" href="/posts/{{ post.id }}/edit">Editar</a>
+    <p style="margin-top:var(--space-4)">
+        <a class="btn btn-secondary" href="/posts/{{ post.id }}/edit">Editar</a>
         <form class="inline-form" method="post" action="/posts/{{ post.id }}/delete" onsubmit="return confirm('Apagar esta entrega?')">
-            <button type="submit" class="button secondary">Apagar</button>
+            <button type="submit" class="btn btn-secondary">Apagar</button>
         </form>
     </p>
     {% endif %}
 </article>
+</main>
 {% endblock %}

@@ -115,6 +115,14 @@ def _save_cover(cover: Optional[UploadFile]) -> Optional[str]:
     return filename
 
 
+@router.post("/posts/upload-image")
+def upload_inline_image(image: UploadFile, user=Depends(require_user)):
+    filename = _save_cover(image)
+    if not filename:
+        raise HTTPException(status_code=400, detail="Nenhuma imagem enviada")
+    return {"url": f"/uploads/{filename}"}
+
+
 @router.post("/posts")
 def post_create(
     request: Request,

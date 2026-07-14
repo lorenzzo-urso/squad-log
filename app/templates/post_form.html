@@ -1,43 +1,67 @@
 {% extends "base.html" %}
 {% block title %}{% if editing %}Editar entrega{% else %}Nova entrega{% endif %}{% endblock %}
 {% block content %}
-<main class="dialog-page">
-<form class="dialog elev-lg" method="post"
-      action="{% if editing %}/posts/{{ post.id }}/edit{% else %}/posts{% endif %}"
-      enctype="multipart/form-data">
-    <div class="dialog-title">{% if editing %}Editar entrega{% else %}Nova entrega{% endif %}</div>
-    <div class="field">
-        <label>Título</label>
-        <input class="input" type="text" name="title" value="{{ post.title }}" required>
-    </div>
-    <div class="field">
-        <label>Resumo</label>
-        <input class="input" type="text" name="summary" value="{{ post.summary }}" required>
-    </div>
-    <div class="field">
-        <label>Corpo (markdown)</label>
-        <textarea class="input" name="body" rows="10" required>{{ post.body }}</textarea>
-    </div>
-    <div class="field">
-        <label>Capa (opcional, até 5MB)</label>
-        <input class="input" type="file" name="cover" accept="image/*">
-    </div>
-    {% if all_users %}
-    <fieldset>
-        <legend>Coautores</legend>
-        {% for u in all_users %}
-        <label class="checkbox-row">
-            <input type="checkbox" name="coauthor_ids" value="{{ u.id }}"
-                {% if u.id in coauthor_ids %}checked{% endif %}>
-            {{ u.name }}
-        </label>
-        {% endfor %}
-    </fieldset>
-    {% endif %}
-    <div class="dialog-actions">
-        <a href="/timeline" class="btn btn-secondary">Cancelar</a>
-        <button type="submit" class="btn btn-primary">{% if editing %}Salvar{% else %}Publicar{% endif %}</button>
-    </div>
-</form>
+<link rel="stylesheet" href="/static/vendor/easymde.min.css">
+<main>
+<div class="editor-page">
+    <div class="hero-kicker" style="text-align:left;margin-bottom:var(--space-2)">{% if editing %}Editar entrega{% else %}Nova entrega{% endif %}</div>
+    <form method="post"
+          action="{% if editing %}/posts/{{ post.id }}/edit{% else %}/posts{% endif %}"
+          enctype="multipart/form-data">
+        <input class="editor-title" type="text" name="title" value="{{ post.title }}" placeholder="Título do registro" required>
+        <input class="editor-summary" type="text" name="summary" value="{{ post.summary }}" placeholder="Resumo em uma linha, aparece na listagem…" required>
+
+        <textarea id="body-editor" name="body">{{ post.body }}</textarea>
+
+        <div class="editor-meta">
+            <div class="field" style="margin-bottom:0">
+                <label>Capa (opcional, até 5MB)</label>
+                <input class="input" type="file" name="cover" accept="image/*">
+                {% if post.cover_path %}<p class="text-muted" style="font-size:12px;margin:6px 0 0">Já existe uma capa — escolher um arquivo aqui substitui.</p>{% endif %}
+            </div>
+            {% if all_users %}
+            <fieldset style="margin-bottom:0">
+                <legend>Coautores</legend>
+                {% for u in all_users %}
+                <label class="checkbox-row">
+                    <input type="checkbox" name="coauthor_ids" value="{{ u.id }}"
+                        {% if u.id in coauthor_ids %}checked{% endif %}>
+                    {{ u.name }}
+                </label>
+                {% endfor %}
+            </fieldset>
+            {% endif %}
+        </div>
+
+        <div class="editor-actions">
+            <a href="/timeline" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">{% if editing %}Salvar{% else %}Publicar{% endif %}</button>
+        </div>
+    </form>
+</div>
 </main>
+<script src="/static/vendor/easymde.min.js"></script>
+<script>
+(function () {
+    var form = document.querySelector('.editor-page form');
+    var easyMDE = new EasyMDE({
+        element: document.getElementById('body-editor'),
+        spellChecker: false,
+        status: ['words'],
+        placeholder: 'Escreva o registro em markdown — título, negrito, listas, links e imagens…',
+        toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|',
+                  'link', 'image', '|', 'preview', 'side-by-side', 'fullscreen', '|', 'guide'],
+        uploadImage: true,
+        imageUploadFunction: function (file, onSuccess, onError) {
+            var data = new FormData();
+            data.append('image', file);
+            fetch('/posts/upload-image', { method: 'POST', body: data })
+                .then(function (r) { if (!r.ok) throw new Error(); return r.json(); })
+                .then(function (d) { onSuccess(d.url); })
+                .catch(function () { onError('Falha no upload da imagem.'); });
+        }
+    });
+    form.addEventListener('submit', function () { easyMDE.codemirror.save(); });
+})();
+</script>
 {% endblock %}

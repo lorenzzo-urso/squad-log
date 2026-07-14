@@ -49,7 +49,6 @@ CREATE TABLE IF NOT EXISTS cards (
     id INTEGER PRIMARY KEY,
     title TEXT NOT NULL,
     description TEXT,
-    tech_tag_id INTEGER NOT NULL REFERENCES tech_tags(id),
     status TEXT NOT NULL CHECK (status IN ('idea', 'doing', 'done')),
     position INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -59,6 +58,12 @@ CREATE TABLE IF NOT EXISTS card_responsibles (
     card_id INTEGER NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id),
     PRIMARY KEY (card_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS card_tags (
+    card_id INTEGER NOT NULL REFERENCES cards(id) ON DELETE CASCADE,
+    tech_tag_id INTEGER NOT NULL REFERENCES tech_tags(id),
+    PRIMARY KEY (card_id, tech_tag_id)
 );
 
 CREATE TABLE IF NOT EXISTS roadmap_items (
@@ -94,10 +99,23 @@ def init_db() -> None:
     try:
         conn.executescript(SCHEMA)
         conn.commit()
+        _migrate_card_tags(conn)
         _seed_admin(conn)
         _seed_default_tags(conn)
     finally:
         conn.close()
+
+
+def _migrate_card_tags(conn: sqlite3.Connection) -> None:
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(cards)")}
+    if "tech_tag_id" not in columns:
+        return
+    conn.execute(
+        "INSERT OR IGNORE INTO card_tags (card_id, tech_tag_id) "
+        "SELECT id, tech_tag_id FROM cards WHERE tech_tag_id IS NOT NULL"
+    )
+    conn.execute("ALTER TABLE cards DROP COLUMN tech_tag_id")
+    conn.commit()
 
 
 def _seed_admin(conn: sqlite3.Connection) -> None:

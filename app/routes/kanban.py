@@ -32,35 +32,51 @@ def _card_responsibles(conn: sqlite3.Connection, card_id: int):
     ).fetchall()
 
 
+def _card_tags(conn: sqlite3.Connection, card_id: int):
+    return conn.execute(
+        "SELECT tech_tags.id, tech_tags.name FROM card_tags "
+        "JOIN tech_tags ON tech_tags.id = card_tags.tech_tag_id "
+        "WHERE card_tags.card_id = ? ORDER BY tech_tags.name",
+        (card_id,),
+    ).fetchall()
+
+
+def _as_int(value: str) -> int | None:
+    return int(value) if value else None
+
+
 @router.get("/kanban", response_class=HTMLResponse)
 def kanban_board(
     request: Request,
-    person: int | None = None,
-    tag: int | None = None,
+    person: str = "",
+    tag: str = "",
     user=Depends(get_current_user),
     conn: sqlite3.Connection = Depends(get_db),
 ):
+    person_id = _as_int(person)
+    tag_id = _as_int(tag)
+
     query = (
         "SELECT DISTINCT cards.* FROM cards "
-        "LEFT JOIN card_responsibles ON card_responsibles.card_id = cards.id WHERE 1=1"
+        "LEFT JOIN card_responsibles ON card_responsibles.card_id = cards.id "
+        "LEFT JOIN card_tags ON card_tags.card_id = cards.id WHERE 1=1"
     )
     params: list = []
-    if person:
+    if person_id:
         query += " AND card_responsibles.user_id = ?"
-        params.append(person)
-    if tag:
-        query += " AND cards.tech_tag_id = ?"
-        params.append(tag)
+        params.append(person_id)
+    if tag_id:
+        query += " AND card_tags.tech_tag_id = ?"
+        params.append(tag_id)
     query += " ORDER BY cards.position ASC"
     cards = conn.execute(query, params).fetchall()
 
-    tags_by_id = {t["id"]: t["name"] for t in _tech_tags(conn)}
     columns = {status: [] for status, _ in COLUMNS}
     for card in cards:
         columns[card["status"]].append(
             {
                 **dict(card),
-                "tech_tag_name": tags_by_id.get(card["tech_tag_id"], ""),
+                "tags": _card_tags(conn, card["id"]),
                 "responsibles": _card_responsibles(conn, card["id"]),
             }
         )
@@ -74,8 +90,8 @@ def kanban_board(
             "cards_by_column": columns,
             "all_users": _all_users(conn),
             "all_tags": _tech_tags(conn),
-            "filter_person": person,
-            "filter_tag": tag,
+            "filter_person": person_id,
+            "filter_tag": tag_id,
         },
     )
 
@@ -88,32 +104,44 @@ def card_new_form(request: Request, user=Depends(require_user), conn: sqlite3.Co
         {
             "user": user,
             "editing": False,
-            "card": {"title": "", "description": "", "tech_tag_id": None},
+            "card": {"title": "", "description": ""},
             "responsible_ids": {user["id"]},
+            "tag_ids": set(),
             "all_users": _all_users(conn),
             "all_tags": _tech_tags(conn),
         },
     )
 
 
+def _save_tags(conn: sqlite3.Connection, card_id: int, tag_ids: list[int]) -> None:
+    conn.execute("DELETE FROM card_tags WHERE card_id = ?", (card_id,))
+    for tid in set(tag_ids):
+        conn.execute(
+            "INSERT OR IGNORE INTO card_tags (card_id, tech_tag_id) VALUES (?, ?)",
+            (card_id, tid),
+        )
+
+
 @router.post("/kanban/cards")
 def card_create(
     title: str = Form(...),
     description: str = Form(""),
-    tech_tag_id: int = Form(...),
+    tag_ids: list[int] = Form(default=[]),
     responsible_ids: list[int] = Form(default=[]),
     user=Depends(require_user),
     conn: sqlite3.Connection = Depends(get_db),
 ):
+    if not tag_ids:
+        raise HTTPException(status_code=400, detail="Selecione ao menos uma tag")
     max_pos = conn.execute(
         "SELECT COALESCE(MAX(position), -1) AS p FROM cards WHERE status = 'idea'"
     ).fetchone()["p"]
     cur = conn.execute(
-        "INSERT INTO cards (title, description, tech_tag_id, status, position) "
-        "VALUES (?, ?, ?, 'idea', ?)",
-        (title, description, tech_tag_id, max_pos + 1),
+        "INSERT INTO cards (title, description, status, position) VALUES (?, ?, 'idea', ?)",
+        (title, description, max_pos + 1),
     )
     card_id = cur.lastrowid
+    _save_tags(conn, card_id, tag_ids)
     for uid in set(responsible_ids) or {user["id"]}:
         conn.execute(
             "INSERT OR IGNORE INTO card_responsibles (card_id, user_id) VALUES (?, ?)",
@@ -129,6 +157,7 @@ def card_edit_form(card_id: int, request: Request, user=Depends(require_user), c
     if not card:
         raise HTTPException(status_code=404)
     responsible_ids = {u["id"] for u in _card_responsibles(conn, card_id)}
+    tag_ids = {t["id"] for t in _card_tags(conn, card_id)}
     return templates.TemplateResponse(
         request,
         "kanban_form.html",
@@ -137,6 +166,7 @@ def card_edit_form(card_id: int, request: Request, user=Depends(require_user), c
             "editing": True,
             "card": card,
             "responsible_ids": responsible_ids,
+            "tag_ids": tag_ids,
             "all_users": _all_users(conn),
             "all_tags": _tech_tags(conn),
         },
@@ -148,7 +178,7 @@ def card_edit_submit(
     card_id: int,
     title: str = Form(...),
     description: str = Form(""),
-    tech_tag_id: int = Form(...),
+    tag_ids: list[int] = Form(default=[]),
     responsible_ids: list[int] = Form(default=[]),
     user=Depends(require_user),
     conn: sqlite3.Connection = Depends(get_db),
@@ -156,10 +186,13 @@ def card_edit_submit(
     card = conn.execute("SELECT * FROM cards WHERE id = ?", (card_id,)).fetchone()
     if not card:
         raise HTTPException(status_code=404)
+    if not tag_ids:
+        raise HTTPException(status_code=400, detail="Selecione ao menos uma tag")
     conn.execute(
-        "UPDATE cards SET title = ?, description = ?, tech_tag_id = ? WHERE id = ?",
-        (title, description, tech_tag_id, card_id),
+        "UPDATE cards SET title = ?, description = ? WHERE id = ?",
+        (title, description, card_id),
     )
+    _save_tags(conn, card_id, tag_ids)
     conn.execute("DELETE FROM card_responsibles WHERE card_id = ?", (card_id,))
     for uid in set(responsible_ids) or {user["id"]}:
         conn.execute(

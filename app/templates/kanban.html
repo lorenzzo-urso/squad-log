@@ -41,11 +41,11 @@
         </div>
         <div class="board-column-body">
             {% for card in cards_by_column[status] %}
-            <div class="board-card" data-id="{{ card.id }}" {% if user %}draggable="true"{% endif %}>
+            <div class="board-card" data-id="{{ card.id }}" {% if user %}draggable="true"{% endif %} tabindex="0" role="button" aria-haspopup="dialog">
                 <div class="title">{{ card.title }}</div>
                 {% if card.description %}<p class="desc">{{ card.description }}</p>{% endif %}
                 <div class="meta-row">
-                    <span class="tag tag-accent">{{ card.tech_tag_name }}</span>
+                    {% for t in card.tags %}<span class="tag tag-accent">{{ t.name }}</span>{% endfor %}
                     <span class="text-muted">{{ card.responsibles | map(attribute='name') | join(', ') }}</span>
                 </div>
                 {% if user %}
@@ -61,12 +61,40 @@
                     </form>
                 </div>
                 {% endif %}
+                <template class="card-full">
+                    <button type="button" class="popup-close" aria-label="Fechar">&times;</button>
+                    <div class="popup-kicker">Kanban · {{ label }}</div>
+                    <h2 class="popup-title">{{ card.title }}</h2>
+                    <div class="card-meta tnum">{{ card.created_at }} · {{ card.responsibles | map(attribute='name') | join(', ') }}</div>
+                    <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+                        {% for t in card.tags %}<span class="tag tag-accent">{{ t.name }}</span>{% endfor %}
+                    </div>
+                    <hr class="hr">
+                    {% if card.description %}
+                    <p class="popup-desc">{{ card.description }}</p>
+                    {% else %}
+                    <p class="popup-desc text-muted" style="font-style:italic">Sem descrição.</p>
+                    {% endif %}
+                    {% if user %}
+                    <div class="dialog-actions" style="justify-content:flex-start;margin-top:var(--space-4)">
+                        <a href="/kanban/cards/{{ card.id }}/edit" class="btn btn-secondary">editar</a>
+                        {% if status == 'done' %}
+                        <form method="post" action="/kanban/cards/{{ card.id }}/publish">
+                            <button type="submit" class="btn btn-ghost">publicar como entrega</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </template>
             </div>
             {% endfor %}
         </div>
     </div>
     {% endfor %}
 </div>
+
+<dialog class="dialog card-popup elev-lg" id="card-popup"></dialog>
 </main>
 <script src="/static/board.js"></script>
+<script src="/static/card-popup.js"></script>
 {% endblock %}

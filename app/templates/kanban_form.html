@@ -13,14 +13,18 @@
         <label>Descrição</label>
         <textarea class="input" name="description" rows="3">{{ card.description or '' }}</textarea>
     </div>
-    <div class="field">
-        <label>Produto/tecnologia</label>
-        <select class="input" name="tech_tag_id" required>
+    <fieldset>
+        <legend>Produto/tecnologia (escolha uma ou mais)</legend>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;padding-top:4px">
             {% for t in all_tags %}
-            <option value="{{ t.id }}" {% if card.tech_tag_id == t.id %}selected{% endif %}>{{ t.name }}</option>
+            <label class="checkbox-row">
+                <input type="checkbox" name="tag_ids" value="{{ t.id }}"
+                    {% if t.id in tag_ids %}checked{% endif %}>
+                {{ t.name }}
+            </label>
             {% endfor %}
-        </select>
-    </div>
+        </div>
+    </fieldset>
     <div class="field">
         <label>Responsáveis</label>
         <div style="display:flex;gap:24px;padding-top:4px;flex-wrap:wrap">

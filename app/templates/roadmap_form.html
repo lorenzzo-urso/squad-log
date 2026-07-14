@@ -13,6 +13,14 @@
         <label>Descrição</label>
         <textarea class="input" name="description" rows="4" required>{{ item.description }}</textarea>
     </div>
+    <div class="field">
+        <label>Coluna</label>
+        <select class="input" name="status">
+            {% for status, label in columns %}
+            <option value="{{ status }}" {% if item.status == status %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </div>
     <div class="dialog-actions">
         <a href="/roadmap" class="btn btn-secondary">Cancelar</a>
         <button type="submit" class="btn btn-primary">{% if editing %}Salvar{% else %}Criar{% endif %}</button>

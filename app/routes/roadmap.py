@@ -32,7 +32,7 @@ def item_new_form(request: Request, user=Depends(require_user)):
     return templates.TemplateResponse(
         request,
         "roadmap_form.html",
-        {"user": user, "editing": False, "item": {"title": "", "description": ""}},
+        {"user": user, "editing": False, "item": {"title": "", "description": "", "status": "planned"}, "columns": COLUMNS},
     )
 
 
@@ -40,15 +40,18 @@ def item_new_form(request: Request, user=Depends(require_user)):
 def item_create(
     title: str = Form(...),
     description: str = Form(...),
+    status: str = Form("planned"),
     user=Depends(require_user),
     conn: sqlite3.Connection = Depends(get_db),
 ):
+    if status not in dict(COLUMNS):
+        raise HTTPException(status_code=400)
     max_pos = conn.execute(
-        "SELECT COALESCE(MAX(position), -1) AS p FROM roadmap_items WHERE status = 'planned'"
+        "SELECT COALESCE(MAX(position), -1) AS p FROM roadmap_items WHERE status = ?", (status,)
     ).fetchone()["p"]
     conn.execute(
-        "INSERT INTO roadmap_items (title, description, status, position) VALUES (?, ?, 'planned', ?)",
-        (title, description, max_pos + 1),
+        "INSERT INTO roadmap_items (title, description, status, position) VALUES (?, ?, ?, ?)",
+        (title, description, status, max_pos + 1),
     )
     conn.commit()
     return RedirectResponse("/roadmap", status_code=303)
@@ -60,7 +63,7 @@ def item_edit_form(item_id: int, request: Request, user=Depends(require_user), c
     if not item:
         raise HTTPException(status_code=404)
     return templates.TemplateResponse(
-        request, "roadmap_form.html", {"user": user, "editing": True, "item": item}
+        request, "roadmap_form.html", {"user": user, "editing": True, "item": item, "columns": COLUMNS}
     )
 
 
@@ -69,12 +72,25 @@ def item_edit_submit(
     item_id: int,
     title: str = Form(...),
     description: str = Form(...),
+    status: str = Form("planned"),
     user=Depends(require_user),
     conn: sqlite3.Connection = Depends(get_db),
 ):
+    if status not in dict(COLUMNS):
+        raise HTTPException(status_code=400)
+    item = conn.execute("SELECT * FROM roadmap_items WHERE id = ?", (item_id,)).fetchone()
+    if not item:
+        raise HTTPException(status_code=404)
+    if item["status"] != status:
+        max_pos = conn.execute(
+            "SELECT COALESCE(MAX(position), -1) AS p FROM roadmap_items WHERE status = ?", (status,)
+        ).fetchone()["p"]
+        position = max_pos + 1
+    else:
+        position = item["position"]
     conn.execute(
-        "UPDATE roadmap_items SET title = ?, description = ? WHERE id = ?",
-        (title, description, item_id),
+        "UPDATE roadmap_items SET title = ?, description = ?, status = ?, position = ? WHERE id = ?",
+        (title, description, status, position, item_id),
     )
     conn.commit()
     return RedirectResponse("/roadmap", status_code=303)

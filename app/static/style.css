@@ -185,21 +185,14 @@ details form { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
 .timeline-toolbar .input { max-width: 340px; }
 
 /* — featured post — */
-/* Cover always sits in its own normal-flow block above the text block below
-   it (no side-by-side, no absolute positioning) so the two can never overlap
-   regardless of image size or viewport. */
-.featured { max-width: 860px; margin: 0 auto; padding: 0 48px 40px; }
-.featured-card { flex-direction: column; gap: 0; padding: 0; overflow: hidden; background: var(--color-neutral-100); cursor: pointer; }
-.featured-cover {
-  width: 100%; height: 280px; overflow: hidden;
-  background: var(--color-surface); border-bottom: 1px solid var(--color-divider);
-  background-image: var(--tex-hatch), var(--tex-dots); background-size: auto, 8px 8px;
-  display: grid; place-items: center;
-}
-.featured-cover img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.featured-body { padding: 32px 38px; display: flex; flex-direction: column; }
-.featured-body h2 { font-size: 28px; margin: 10px 0 12px; line-height: 1.2; }
-.featured-body .card-body { font-size: 14px; line-height: 1.6; text-align: justify; margin: 0 0 var(--space-3); }
+.featured { max-width: 1180px; margin: 0 auto; padding: 0 48px 40px; }
+.featured-card { flex-direction: row; gap: 0; padding: 0; overflow: hidden; background: var(--color-neutral-100); cursor: pointer; }
+.featured-cover { flex: 0 0 54%; min-height: 320px; position: relative; overflow: hidden; background: var(--color-surface); border-right: 1px solid var(--color-divider); background-image: var(--tex-hatch), var(--tex-dots); background-size: auto, 8px 8px; display: grid; place-items: center; }
+.featured-cover img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+.featured-body { flex: 1; padding: 36px 38px; display: flex; flex-direction: column; }
+.featured-body h2 { font-size: 30px; margin: 10px 0 12px; line-height: 1.15; }
+.featured-body .card-body { font-size: 14px; line-height: 1.6; text-align: justify; margin: 0; }
+.featured-body .btn { align-self: flex-start; margin-top: auto; }
 
 .cover-label { border: 1px solid var(--color-divider); background: var(--color-bg); padding: 10px 18px; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--color-neutral-600); }
 .cover-label.sm { padding: 6px 12px; font-size: 10px; }
@@ -405,6 +398,8 @@ main { flex: 1; }
   .board { grid-template-columns: 1fr; }
   .post-grid { grid-template-columns: repeat(2, 1fr); }
   .roadmap-cols { grid-template-columns: 1fr; }
+  .featured-card { flex-direction: column; }
+  .featured-cover { border-right: none; border-bottom: 1px solid var(--color-divider); min-height: 200px; }
 }
 @media (max-width: 620px) {
   .post-grid { grid-template-columns: 1fr; }

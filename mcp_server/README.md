@@ -43,6 +43,11 @@ próprias credenciais.
    | `SQUADLOG_URL` | ex. `http://192.168.1.50:8000` (IP da rede) ou `http://127.0.0.1:8000` se for testar na mesma máquina do servidor |
    | `SQUADLOG_TOKEN` | o token gerado em `/tokens` |
 
+   **Uso interno apenas.** O `SQUADLOG_URL` só precisa alcançar a rede da
+   empresa — não exponha o squad-log na internet pra "usar de qualquer
+   lugar". Isso exigiria um servidor MCP remoto (HTTP/HTTPS com auth
+   própria), que não é o que existe hoje (o servidor roda local, via stdio).
+
 4. Feche e abra o Claude Code de novo nesse projeto — é assim que ele detecta um `.mcp.json` novo. Na primeira vez ele pergunta se você confia no servidor "squad-log"; aprova.
 5. Teste pedindo algo tipo *"liste os registros do squad-log via MCP"*.
 

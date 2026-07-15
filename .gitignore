@@ -4,6 +4,7 @@ __pycache__/
 *.pyc
 data/
 .env
-.claude/
+.claude/*
+!.claude/skills/
 backups/
 .mcp.json

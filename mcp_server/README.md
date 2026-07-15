@@ -65,5 +65,7 @@ independente do login. Se quiser revogar o acesso do MCP, revogue o token em
 | `list_cards` | Lista os cards do Kanban, com tags e responsáveis |
 | `create_card` | Cria um card (título, tags, descrição, responsáveis, coluna) |
 | `update_card` | Atualiza um card existente (só os campos enviados mudam) |
+| `list_learning_items` | Lista os itens do Aprendizado de todo o squad |
+| `create_learning_item` | Adiciona um item ao Aprendizado (dono é sempre quem gerou o token) |
 
-Não existe `delete_post` nem `delete_card`.
+Não existe tool de apagar nada.

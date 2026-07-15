@@ -115,6 +115,15 @@ def whoami(user=Depends(require_user)):
     return {"id": user["id"], "name": user["name"]}
 
 
+@router.get("/api/learning")
+def api_list_learning(conn: sqlite3.Connection = Depends(get_db)):
+    items = conn.execute(
+        "SELECT learning_items.*, users.name AS owner_name FROM learning_items "
+        "JOIN users ON users.id = learning_items.user_id ORDER BY learning_items.consumed_at DESC"
+    ).fetchall()
+    return [dict(i) for i in items]
+
+
 class CaptureBody(BaseModel):
     title: str
     type: str

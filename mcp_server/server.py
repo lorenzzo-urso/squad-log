@@ -117,5 +117,34 @@ def update_card(
     return r.json()
 
 
+@mcp.tool()
+def list_learning_items() -> list[dict]:
+    """Lista os itens do Aprendizado (cursos, palestras, livros, artigos etc.) de todo o squad."""
+    r = client.get("/api/learning")
+    r.raise_for_status()
+    return r.json()
+
+
+@mcp.tool()
+def create_learning_item(
+    title: str, type: str, consumed_at: str, description: str = "", link: str = ""
+) -> dict:
+    """Adiciona um item ao Aprendizado, pra quem estiver dono do token configurado.
+    type: curso, palestra, livro, artigo, noticia, video, treinamento, projeto ou outro.
+    consumed_at: data no formato YYYY-MM-DD."""
+    r = client.post(
+        "/api/learning",
+        json={
+            "title": title,
+            "type": type,
+            "description": description,
+            "link": link,
+            "consumed_at": consumed_at,
+        },
+    )
+    r.raise_for_status()
+    return r.json()
+
+
 if __name__ == "__main__":
     mcp.run()

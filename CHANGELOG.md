@@ -4,6 +4,9 @@ Registro do que mudou no próprio Registro da Equipe, por versão.
 
 ## 2026-07-15
 
+- **Fix: capa sobrepõe texto nos cards "Recentes"**: imagens de capa mais altas (perto de quadradas ou verticais) vazavam do card na grade da Timeline e ficavam por cima do título/resumo. `.post-cover` agora recorta a imagem do mesmo jeito que o card em destaque (`overflow: hidden` + imagem absoluta), então ela nunca ultrapassa a área reservada.
+- **Skill `squad-log` no Claude Code** (`.claude/skills/squad-log/`): ensina o Claude a usar as tools MCP com as convenções do projeto (status do Kanban, tipos do Aprendizado, como achar tags) — pedir "resuma e crie o registro" ou "move esse card pra concluído" já funciona sem reexplicar nada. Fica versionada no repo, disponível pra qualquer um que clonar o projeto.
+- **MCP e API do Aprendizado**: novas tools `list_learning_items` e `create_learning_item`, e endpoint `GET /api/learning` — o squad-log MCP agora cobre Aprendizado além de Registros e Kanban.
 - **Tokens de API** (`/tokens`): cada pessoa gera seus próprios tokens pessoais pra autenticar ferramentas externas (MCP, scripts), em vez de expor a senha de login. O MCP server agora usa `SQUADLOG_TOKEN` (Bearer) no lugar de email/senha; revogar um token no `/tokens` desliga o acesso na hora, sem mexer na senha.
 - **Timeline com data de publicação própria e arquivo**: registros agora têm uma "Data de publicação" editável (separada de quando foram digitados no sistema), pra poder cadastrar entregas antigas com a data real delas. A tela principal mostra só os últimos 30 dias (destaque + grade); o resto vira um **Arquivo** abaixo, organizado por Ano → Trimestre, recolhível.
 - **Servidor MCP** (`mcp_server/`): 6 tools pra um agente de IA listar, criar e editar Registros e cards do Kanban direto — sem tool de apagar, de propósito.

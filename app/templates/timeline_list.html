@@ -30,12 +30,18 @@
             {% endif %}
         </div>
         <div class="featured-body">
-            <div class="card-meta tnum">{{ featured.created_at }} · <span style="color:var(--color-text)">{{ featured.author_name }}</span></div>
+            <div class="card-meta tnum">{{ featured.published_at }} · <span style="color:var(--color-text)">{{ featured.author_name }}</span></div>
             <h2>{{ featured.title }}</h2>
             <p class="card-body">{{ featured.summary }}</p>
             <span class="btn btn-ghost">ler registro →</span>
         </div>
     </a>
+</div>
+{% endif %}
+
+{% if not filtering and (featured or grid_posts) %}
+<div class="container" style="padding-bottom:0">
+    <h2 class="section-heading">Recentes <span class="text-muted" style="font-size:12px;font-style:italic;font-weight:400">— últimos 30 dias</span></h2>
 </div>
 {% endif %}
 
@@ -51,7 +57,7 @@
             {% endif %}
         </div>
         <div class="post-card-body">
-            <div class="card-meta tnum">{{ post.created_at }} · {{ post.author_name }}</div>
+            <div class="card-meta tnum">{{ post.published_at }} · {{ post.author_name }}</div>
             <div class="card-title">{{ post.title }}</div>
             <p>{{ post.summary }}</p>
             <div class="post-card-footer">
@@ -64,8 +70,11 @@
 
 {% if empty %}
 <p class="text-muted empty-note">Nenhum registro encontrado para essa busca.</p>
-{% elif not featured and not grid_posts %}
-<p class="text-muted empty-note">Nenhum registro publicado ainda.</p>
+{% elif not filtering and not featured and not grid_posts %}
+<p class="text-muted empty-note">
+    {% if archive %}Nenhum registro nos últimos 30 dias — o resto está no arquivo, abaixo.
+    {% else %}Nenhum registro publicado ainda.{% endif %}
+</p>
 {% endif %}
 
 {% if total_pages > 1 %}
@@ -76,6 +85,27 @@
     {% if page < total_pages %}
     <a href="/timeline?q={{ query }}&page={{ page + 1 }}" class="page-item next">→</a>
     {% endif %}
+</div>
+{% endif %}
+
+{% if archive %}
+<div class="container archive">
+    <h2 class="section-heading">Arquivo</h2>
+    {% for year_group in archive %}
+    <details class="archive-year" {% if loop.first %}open{% endif %}>
+        <summary class="tnum">{{ year_group.year }} <span class="text-muted">— {{ year_group.quarters | map(attribute='posts') | map('length') | sum }} registro(s)</span></summary>
+        {% for q in year_group.quarters %}
+        <details class="archive-quarter" {% if loop.first %}open{% endif %}>
+            <summary>{{ q.label }} <span class="text-muted">— {{ q.posts | length }}</span></summary>
+            <ul class="archive-list">
+                {% for post in q.posts %}
+                <li><a href="/timeline/{{ post.id }}"><span class="tnum text-muted">{{ post.published_at }}</span> — {{ post.title }}</a></li>
+                {% endfor %}
+            </ul>
+        </details>
+        {% endfor %}
+    </details>
+    {% endfor %}
 </div>
 {% endif %}
 

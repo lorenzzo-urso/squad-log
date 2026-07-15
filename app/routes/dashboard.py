@@ -14,7 +14,7 @@ templates = Jinja2Templates(directory="app/templates")
 @router.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request, user=Depends(get_current_user), conn: sqlite3.Connection = Depends(get_db)):
     posts_by_month = conn.execute(
-        "SELECT strftime('%Y-%m', created_at) AS month, COUNT(*) AS n FROM posts "
+        "SELECT strftime('%Y-%m', published_at) AS month, COUNT(*) AS n FROM posts "
         "GROUP BY month ORDER BY month DESC LIMIT 12"
     ).fetchall()
     posts_by_month = list(reversed(posts_by_month))

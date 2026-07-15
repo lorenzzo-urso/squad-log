@@ -1,7 +1,7 @@
 import math
 import sqlite3
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from email.utils import format_datetime
 from pathlib import Path
 from typing import Optional
@@ -35,6 +35,30 @@ def _post_coauthors(conn: sqlite3.Connection, post_id: int):
     ).fetchall()
 
 
+def _quarter_label(month: int) -> str:
+    return f"{(month - 1) // 3 + 1}º trimestre"
+
+
+def _group_archive(posts: list[dict]) -> list[dict]:
+    """Groups older posts (already sorted by published_at desc) into
+    year -> quarter, for the archive section below the recent-30-days view."""
+    years: dict[str, dict[str, list[dict]]] = {}
+    for p in posts:
+        year = p["published_at"][:4]
+        month = int(p["published_at"][5:7])
+        years.setdefault(year, {}).setdefault(_quarter_label(month), []).append(p)
+    return [
+        {
+            "year": year,
+            "quarters": [
+                {"label": label, "posts": years[year][label]}
+                for label in sorted(years[year].keys(), reverse=True)
+            ],
+        }
+        for year in sorted(years.keys(), reverse=True)
+    ]
+
+
 @router.get("/", response_class=HTMLResponse)
 def home():
     return RedirectResponse("/timeline", status_code=303)
@@ -51,12 +75,13 @@ def timeline_list(
     posts = conn.execute(
         "SELECT posts.*, users.name AS author_name FROM posts "
         "JOIN users ON users.id = posts.author_id "
-        "ORDER BY posts.created_at DESC"
+        "ORDER BY posts.published_at DESC, posts.created_at DESC"
     ).fetchall()
     posts = [{**dict(p), "coauthors": _post_coauthors(conn, p["id"])} for p in posts]
 
     query = q.strip()
     filtering = bool(query)
+    archive = []
     if filtering:
         needle = query.lower()
         grid_source = [
@@ -64,8 +89,11 @@ def timeline_list(
         ]
         featured = None
     else:
-        grid_source = posts[1:]
-        featured = posts[0] if posts else None
+        cutoff = (datetime.now() - timedelta(days=30)).strftime("%Y-%m-%d")
+        recent = [p for p in posts if p["published_at"] >= cutoff]
+        archive = _group_archive([p for p in posts if p["published_at"] < cutoff])
+        grid_source = recent[1:]
+        featured = recent[0] if recent else None
 
     total_pages = max(1, math.ceil(len(grid_source) / PER_PAGE))
     page = min(max(page, 1), total_pages)
@@ -78,6 +106,7 @@ def timeline_list(
             "user": user,
             "featured": featured,
             "grid_posts": grid_posts,
+            "archive": archive,
             "query": query,
             "filtering": filtering,
             "empty": filtering and not grid_source,
@@ -92,12 +121,12 @@ def feed(request: Request, conn: sqlite3.Connection = Depends(get_db)):
     posts = conn.execute(
         "SELECT posts.*, users.name AS author_name FROM posts "
         "JOIN users ON users.id = posts.author_id "
-        "ORDER BY posts.created_at DESC LIMIT 20"
+        "ORDER BY posts.published_at DESC, posts.created_at DESC LIMIT 20"
     ).fetchall()
     items = []
     for p in posts:
-        created = datetime.strptime(p["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-        items.append({**dict(p), "pub_date": format_datetime(created)})
+        published = datetime.strptime(p["published_at"], "%Y-%m-%d").replace(tzinfo=timezone.utc)
+        items.append({**dict(p), "pub_date": format_datetime(published)})
     return templates.TemplateResponse(
         request,
         "feed.xml",
@@ -120,7 +149,12 @@ def post_new_form(
         {
             "user": user,
             "editing": False,
-            "post": {"title": title, "summary": "", "body": body},
+            "post": {
+                "title": title,
+                "summary": "",
+                "body": body,
+                "published_at": datetime.now().strftime("%Y-%m-%d"),
+            },
             "coauthor_ids": set(),
             "all_users": [u for u in _all_users(conn) if u["id"] != user["id"]],
         },
@@ -153,6 +187,7 @@ def post_create(
     title: str = Form(...),
     summary: str = Form(...),
     body: str = Form(...),
+    published_at: str = Form(...),
     coauthor_ids: list[int] = Form(default=[]),
     cover: Optional[UploadFile] = None,
     user=Depends(require_user),
@@ -160,8 +195,9 @@ def post_create(
 ):
     cover_path = _save_cover(cover)
     cur = conn.execute(
-        "INSERT INTO posts (title, summary, body, cover_path, author_id) VALUES (?, ?, ?, ?, ?)",
-        (title, summary, body, cover_path, user["id"]),
+        "INSERT INTO posts (title, summary, body, cover_path, author_id, published_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (title, summary, body, cover_path, user["id"], published_at),
     )
     post_id = cur.lastrowid
     for uid in set(coauthor_ids) - {user["id"]}:
@@ -215,6 +251,7 @@ def post_edit_submit(
     title: str = Form(...),
     summary: str = Form(...),
     body: str = Form(...),
+    published_at: str = Form(...),
     coauthor_ids: list[int] = Form(default=[]),
     cover: Optional[UploadFile] = None,
     user=Depends(require_admin),
@@ -225,8 +262,8 @@ def post_edit_submit(
         raise HTTPException(status_code=404)
     cover_path = _save_cover(cover) or post["cover_path"]
     conn.execute(
-        "UPDATE posts SET title = ?, summary = ?, body = ?, cover_path = ? WHERE id = ?",
-        (title, summary, body, cover_path, post_id),
+        "UPDATE posts SET title = ?, summary = ?, body = ?, cover_path = ?, published_at = ? WHERE id = ?",
+        (title, summary, body, cover_path, published_at, post_id),
     )
     conn.execute("DELETE FROM post_coauthors WHERE post_id = ?", (post_id,))
     for uid in set(coauthor_ids) - {post["author_id"]}:
@@ -251,6 +288,7 @@ class PostIn(BaseModel):
     summary: str
     body: str
     coauthor_ids: list[int] = []
+    published_at: str | None = None  # YYYY-MM-DD; defaults to today if omitted
 
 
 @router.get("/api/posts")
@@ -269,9 +307,10 @@ def api_list_posts(conn: sqlite3.Connection = Depends(get_db)):
 def api_create_post(
     body: PostIn, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)
 ):
+    published_at = body.published_at or datetime.now().strftime("%Y-%m-%d")
     cur = conn.execute(
-        "INSERT INTO posts (title, summary, body, author_id) VALUES (?, ?, ?, ?)",
-        (body.title, body.summary, body.body, user["id"]),
+        "INSERT INTO posts (title, summary, body, author_id, published_at) VALUES (?, ?, ?, ?, ?)",
+        (body.title, body.summary, body.body, user["id"], published_at),
     )
     post_id = cur.lastrowid
     for uid in set(body.coauthor_ids) - {user["id"]}:
@@ -294,9 +333,10 @@ def api_update_post(
     post = conn.execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
     if not post:
         raise HTTPException(status_code=404)
+    published_at = body.published_at or post["published_at"]
     conn.execute(
-        "UPDATE posts SET title = ?, summary = ?, body = ? WHERE id = ?",
-        (body.title, body.summary, body.body, post_id),
+        "UPDATE posts SET title = ?, summary = ?, body = ?, published_at = ? WHERE id = ?",
+        (body.title, body.summary, body.body, published_at, post_id),
     )
     conn.execute("DELETE FROM post_coauthors WHERE post_id = ?", (post_id,))
     for uid in set(body.coauthor_ids) - {post["author_id"]}:

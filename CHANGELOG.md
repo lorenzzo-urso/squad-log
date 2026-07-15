@@ -4,6 +4,7 @@ Registro do que mudou no próprio Registro da Equipe, por versão.
 
 ## 2026-07-15
 
+- **Timeline com data de publicação própria e arquivo**: registros agora têm uma "Data de publicação" editável (separada de quando foram digitados no sistema), pra poder cadastrar entregas antigas com a data real delas. A tela principal mostra só os últimos 30 dias (destaque + grade); o resto vira um **Arquivo** abaixo, organizado por Ano → Trimestre, recolhível.
 - **Servidor MCP** (`mcp_server/`): 6 tools pra um agente de IA listar, criar e editar Registros e cards do Kanban direto — sem tool de apagar, de propósito.
 - **API JSON** `/api/posts` e `/api/kanban/cards` (list/create/update), base do servidor MCP e reaproveitável por qualquer outro integração futura.
 - **"Meu radar"** (`/radar`): painel pessoal com meus registros, meus cards e atalho pro meu Aprendizado, tudo num lugar.

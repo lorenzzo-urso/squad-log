@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS posts (
     body TEXT NOT NULL,
     cover_path TEXT,
     author_id INTEGER NOT NULL REFERENCES users(id),
+    published_at TEXT NOT NULL DEFAULT (date('now')),
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -112,6 +113,7 @@ def init_db() -> None:
         conn.commit()
         _migrate_card_tags(conn)
         _migrate_learning_types(conn)
+        _migrate_post_published_at(conn)
         _seed_admin(conn)
         _seed_default_tags(conn)
     finally:
@@ -153,6 +155,15 @@ def _migrate_learning_types(conn: sqlite3.Connection) -> None:
         DROP TABLE learning_items_old;
         """
     )
+    conn.commit()
+
+
+def _migrate_post_published_at(conn: sqlite3.Connection) -> None:
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(posts)")}
+    if "published_at" in columns:
+        return
+    conn.execute("ALTER TABLE posts ADD COLUMN published_at TEXT")
+    conn.execute("UPDATE posts SET published_at = substr(created_at, 1, 10) WHERE published_at IS NULL")
     conn.commit()
 
 

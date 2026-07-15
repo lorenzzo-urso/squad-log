@@ -15,6 +15,11 @@
 
         <div class="editor-meta">
             <div class="field" style="margin-bottom:0">
+                <label>Data de publicação</label>
+                <input class="input" type="date" name="published_at" value="{{ post.published_at }}" required>
+                <p class="text-muted" style="font-size:12px;margin:6px 0 0">Define onde o registro aparece na timeline — use uma data passada pra entregas antigas/históricas.</p>
+            </div>
+            <div class="field" style="margin-bottom:0">
                 <label>Capa (opcional, até 5MB)</label>
                 <input class="input" type="file" name="cover" accept="image/*">
                 {% if post.cover_path %}<p class="text-muted" style="font-size:12px;margin:6px 0 0">Já existe uma capa — escolher um arquivo aqui substitui.</p>{% endif %}

@@ -13,7 +13,7 @@
 <hr class="hr" style="margin:8px 0 var(--space-3)">
 {% for post in posts %}
 <div class="learning-item">
-    <div class="card-meta tnum">{{ post.created_at }} · {{ post.author_name }}{% if post.coauthors %} & {{ post.coauthors | map(attribute='name') | join(', ') }}{% endif %}</div>
+    <div class="card-meta tnum">{{ post.published_at }} · {{ post.author_name }}{% if post.coauthors %} & {{ post.coauthors | map(attribute='name') | join(', ') }}{% endif %}</div>
     <div class="card-title"><a href="/timeline/{{ post.id }}">{{ post.title }}</a></div>
     <p class="card-body">{{ post.summary }}</p>
 </div>

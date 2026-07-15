@@ -234,6 +234,22 @@ details form { display: flex; gap: 0.5rem; margin-top: 0.4rem; }
 
 .empty-note { text-align: center; padding: 8px 0 32px; font-style: italic; }
 
+/* — archive (year/quarter, older than 30 days) — */
+.section-heading { font-size: 22px; margin: var(--space-6) 0 var(--space-3); }
+.archive { padding-top: var(--space-4); padding-bottom: var(--space-8); }
+.archive-year { border-top: 1px solid var(--color-divider); padding: var(--space-3) 0; }
+.archive-year > summary { font-family: var(--font-heading); font-size: 22px; font-weight: var(--font-heading-weight); cursor: pointer; list-style: none; }
+.archive-year > summary::-webkit-details-marker { display: none; }
+.archive-year > summary::before { content: '▸ '; color: var(--color-accent); }
+.archive-year[open] > summary::before { content: '▾ '; }
+.archive-quarter { margin: var(--space-3) 0 var(--space-3) var(--space-4); }
+.archive-quarter > summary { font-size: 15px; cursor: pointer; color: color-mix(in srgb, var(--color-text) 80%, transparent); list-style: none; }
+.archive-quarter > summary::-webkit-details-marker { display: none; }
+.archive-quarter > summary::before { content: '· '; }
+.archive-list { list-style: none; padding: 0; margin: var(--space-2) 0 0 var(--space-4); display: flex; flex-direction: column; gap: 6px; }
+.archive-list a { font-size: 14px; color: var(--color-text); }
+.archive-list a:hover { color: var(--color-accent); }
+
 /* — pagination — */
 .pagination { display: flex; justify-content: center; gap: 8px; padding: 4px 0 56px; }
 .page-item { width: 32px; height: 32px; display: grid; place-items: center; border-radius: var(--radius-md); font-size: 13px; border: 1px solid transparent; color: var(--color-text); text-decoration: underline; text-underline-offset: 3px; }

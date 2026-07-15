@@ -11,7 +11,7 @@
     <div class="post-kicker tnum">Registro nº {{ post.id }}</div>
     <h1>{{ post.title }}</h1>
     <div class="card-meta tnum">
-        Publicado em {{ post.created_at }} · por {{ post.author_name }}
+        Publicado em {{ post.published_at }} · por {{ post.author_name }}
         {% if post.coauthors %}& {{ post.coauthors | map(attribute='name') | join(', ') }}{% endif %}
     </div>
     <button type="button" class="btn btn-secondary no-print" style="margin-top:var(--space-2)" onclick="window.print()">Exportar PDF</button>

@@ -9,6 +9,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 import markdown as md
 
 from app.auth import get_current_user, require_admin, require_user
@@ -58,7 +59,9 @@ def timeline_list(
     filtering = bool(query)
     if filtering:
         needle = query.lower()
-        grid_source = [p for p in posts if needle in (p["title"] + " " + p["summary"]).lower()]
+        grid_source = [
+            p for p in posts if needle in (p["title"] + " " + p["summary"] + " " + p["body"]).lower()
+        ]
         featured = None
     else:
         grid_source = posts[1:]
@@ -181,7 +184,10 @@ def post_detail(post_id: int, request: Request, user=Depends(get_current_user), 
         raise HTTPException(status_code=404)
     post = {**dict(post), "coauthors": _post_coauthors(conn, post_id)}
     post["body_html"] = md.markdown(post["body"])
-    return templates.TemplateResponse(request, "post_detail.html", {"user": user, "post": post})
+    print_date = datetime.now().strftime("%d/%m/%Y")
+    return templates.TemplateResponse(
+        request, "post_detail.html", {"user": user, "post": post, "print_date": print_date}
+    )
 
 
 @router.get("/posts/{post_id}/edit", response_class=HTMLResponse)
@@ -237,3 +243,65 @@ def post_delete(post_id: int, user=Depends(require_admin), conn: sqlite3.Connect
     conn.execute("DELETE FROM posts WHERE id = ?", (post_id,))
     conn.commit()
     return RedirectResponse("/timeline", status_code=303)
+
+
+# ── JSON API (used by the MCP server; intentionally no delete tool) ─────────
+class PostIn(BaseModel):
+    title: str
+    summary: str
+    body: str
+    coauthor_ids: list[int] = []
+
+
+@router.get("/api/posts")
+def api_list_posts(conn: sqlite3.Connection = Depends(get_db)):
+    posts = conn.execute(
+        "SELECT posts.*, users.name AS author_name FROM posts "
+        "JOIN users ON users.id = posts.author_id ORDER BY posts.created_at DESC"
+    ).fetchall()
+    return [
+        {**dict(p), "coauthors": [dict(c) for c in _post_coauthors(conn, p["id"])]}
+        for p in posts
+    ]
+
+
+@router.post("/api/posts")
+def api_create_post(
+    body: PostIn, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)
+):
+    cur = conn.execute(
+        "INSERT INTO posts (title, summary, body, author_id) VALUES (?, ?, ?, ?)",
+        (body.title, body.summary, body.body, user["id"]),
+    )
+    post_id = cur.lastrowid
+    for uid in set(body.coauthor_ids) - {user["id"]}:
+        conn.execute(
+            "INSERT OR IGNORE INTO post_coauthors (post_id, user_id) VALUES (?, ?)", (post_id, uid)
+        )
+    conn.commit()
+    return {"ok": True, "id": post_id}
+
+
+@router.post("/api/posts/{post_id}")
+def api_update_post(
+    post_id: int,
+    body: PostIn,
+    user=Depends(require_admin),
+    conn: sqlite3.Connection = Depends(get_db),
+):
+    # only admin, same rule as the web form -- a published record isn't
+    # editable by just anyone, MCP included.
+    post = conn.execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
+    if not post:
+        raise HTTPException(status_code=404)
+    conn.execute(
+        "UPDATE posts SET title = ?, summary = ?, body = ? WHERE id = ?",
+        (body.title, body.summary, body.body, post_id),
+    )
+    conn.execute("DELETE FROM post_coauthors WHERE post_id = ?", (post_id,))
+    for uid in set(body.coauthor_ids) - {post["author_id"]}:
+        conn.execute(
+            "INSERT OR IGNORE INTO post_coauthors (post_id, user_id) VALUES (?, ?)", (post_id, uid)
+        )
+    conn.commit()
+    return {"ok": True, "id": post_id}

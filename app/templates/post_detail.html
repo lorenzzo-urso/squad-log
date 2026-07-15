@@ -3,13 +3,18 @@
 {% block content %}
 <main>
 <article class="post-article">
-    <a href="/timeline" class="post-back">← todos os registros</a>
+    <div class="print-letterhead">
+        <div class="print-brand">Registro da Equipe</div>
+        <div class="print-date">Documento gerado em {{ print_date }}</div>
+    </div>
+    <a href="/timeline" class="post-back no-print">← todos os registros</a>
     <div class="post-kicker tnum">Registro nº {{ post.id }}</div>
     <h1>{{ post.title }}</h1>
     <div class="card-meta tnum">
         Publicado em {{ post.created_at }} · por {{ post.author_name }}
         {% if post.coauthors %}& {{ post.coauthors | map(attribute='name') | join(', ') }}{% endif %}
     </div>
+    <button type="button" class="btn btn-secondary no-print" style="margin-top:var(--space-2)" onclick="window.print()">Exportar PDF</button>
     <hr class="hr">
 
     {% if post.cover_path %}
@@ -20,13 +25,13 @@
 
     <div class="post-body">{{ post.body_html | safe }}</div>
 
-    <div class="post-actions">
+    <div class="post-actions no-print">
         <a href="/timeline" class="btn btn-secondary">← todos os registros</a>
         <a href="/roadmap" class="btn btn-ghost">ver o roadmap →</a>
     </div>
 
     {% if user and user.role == 'admin' %}
-    <p style="margin-top:var(--space-4)">
+    <p class="no-print" style="margin-top:var(--space-4)">
         <a class="btn btn-secondary" href="/posts/{{ post.id }}/edit">Editar</a>
         <form class="inline-form" method="post" action="/posts/{{ post.id }}/delete" onsubmit="return confirm('Apagar esta entrega?')">
             <button type="submit" class="btn btn-secondary">Apagar</button>

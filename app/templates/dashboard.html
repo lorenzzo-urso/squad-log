@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<main class="container" style="padding-top:48px;padding-bottom:72px">
+<h1>Dashboard</h1>
+<p class="text-muted" style="font-style:italic;margin-top:-6px">visão geral de entrega do squad</p>
+
+<div class="stat-row">
+    <div class="stat-tile"><div class="stat-value tnum">{{ totals.posts }}</div><div class="stat-label">registros publicados</div></div>
+    <div class="stat-tile"><div class="stat-value tnum">{{ totals.cards_done }}/{{ totals.cards_idea + totals.cards_doing + totals.cards_done }}</div><div class="stat-label">cards concluídos</div></div>
+    <div class="stat-tile"><div class="stat-value tnum">{{ totals.roadmap_shipped }}/{{ totals.roadmap_total }}</div><div class="stat-label">itens do roadmap entregues</div></div>
+    <div class="stat-tile"><div class="stat-value tnum">{{ totals.learning }}</div><div class="stat-label">itens de aprendizado</div></div>
+</div>
+
+<h2 style="margin-top:var(--space-8)">Registros por mês</h2>
+<div class="bar-list">
+    {% for row in posts_by_month %}
+    <div class="bar-row">
+        <span class="bar-label tnum">{{ row.month }}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:{{ (row.n / max_posts_month * 100) if max_posts_month else 0 }}%"></div></div>
+        <span class="bar-value tnum">{{ row.n }}</span>
+    </div>
+    {% else %}
+    <p class="text-muted" style="font-style:italic">Nenhum registro ainda.</p>
+    {% endfor %}
+</div>
+
+<h2 style="margin-top:var(--space-8)">Cards concluídos por pessoa</h2>
+<div class="bar-list">
+    {% for row in done_by_person %}
+    <div class="bar-row">
+        <span class="bar-label">{{ row.name }}</span>
+        <div class="bar-track"><div class="bar-fill" style="width:{{ (row.n / max_done * 100) if max_done else 0 }}%"></div></div>
+        <span class="bar-value tnum">{{ row.n }}</span>
+    </div>
+    {% else %}
+    <p class="text-muted" style="font-style:italic">Nenhum card concluído ainda.</p>
+    {% endfor %}
+</div>
+</main>
+{% endblock %}

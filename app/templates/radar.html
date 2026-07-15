@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Meu radar{% endblock %}
+{% block content %}
+<main class="container" style="padding-top:48px;padding-bottom:72px">
+<h1>Meu radar</h1>
+<p class="text-muted" style="font-style:italic;margin-top:-6px">tudo que é seu, num lugar só — {{ user.name }}</p>
+
+<div class="board-toolbar" style="margin-top:var(--space-6)">
+    <h2 style="margin:0">Meus registros</h2>
+    <span class="spacer"></span>
+    <a href="/posts/new" class="btn btn-primary">novo registro</a>
+</div>
+<hr class="hr" style="margin:8px 0 var(--space-3)">
+{% for post in posts %}
+<div class="learning-item">
+    <div class="card-meta tnum">{{ post.created_at }} · {{ post.author_name }}{% if post.coauthors %} & {{ post.coauthors | map(attribute='name') | join(', ') }}{% endif %}</div>
+    <div class="card-title"><a href="/timeline/{{ post.id }}">{{ post.title }}</a></div>
+    <p class="card-body">{{ post.summary }}</p>
+</div>
+{% else %}
+<p class="text-muted" style="font-style:italic">Nenhum registro seu ainda.</p>
+{% endfor %}
+
+<div class="board-toolbar" style="margin-top:var(--space-8)">
+    <h2 style="margin:0">Meus cards</h2>
+    <span class="spacer"></span>
+    <a href="/kanban/new" class="btn btn-primary">novo card</a>
+</div>
+<hr class="hr" style="margin:8px 0 var(--space-3)">
+{% for card in cards %}
+<div class="learning-item">
+    <div class="card-meta tnum">{{ card.status_label }}</div>
+    <div class="card-title"><a href="/kanban">{{ card.title }}</a></div>
+    {% if card.description %}<p class="card-body">{{ card.description }}</p>{% endif %}
+    <div class="meta-row" style="margin-top:6px">
+        {% for t in card.tags %}<span class="tag tag-accent">{{ t.name }}</span>{% endfor %}
+        <span class="text-muted">{{ card.responsibles | map(attribute='name') | join(', ') }}</span>
+    </div>
+</div>
+{% else %}
+<p class="text-muted" style="font-style:italic">Nenhum card seu ainda.</p>
+{% endfor %}
+
+<div class="board-toolbar" style="margin-top:var(--space-8)">
+    <h2 style="margin:0">Meu aprendizado</h2>
+    <span class="spacer"></span>
+    <a href="/aprendizado" class="btn btn-secondary">ver tudo →</a>
+</div>
+<hr class="hr" style="margin:8px 0 var(--space-3)">
+<p class="text-muted" style="font-style:italic">Cursos, palestras e leituras ficam em /aprendizado, com filtro pro seu perfil.</p>
+
+</main>
+{% endblock %}

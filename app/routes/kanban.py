@@ -236,3 +236,105 @@ def kanban_reorder(payload: ReorderBody, user=Depends(require_user), conn: sqlit
         )
     conn.commit()
     return JSONResponse({"ok": True})
+
+
+# ── JSON API (used by the MCP server; intentionally no delete tool) ─────────
+def _serialize_card(conn: sqlite3.Connection, card: sqlite3.Row) -> dict:
+    return {
+        **dict(card),
+        "tags": [dict(t) for t in _card_tags(conn, card["id"])],
+        "responsibles": [dict(r) for r in _card_responsibles(conn, card["id"])],
+    }
+
+
+class CardIn(BaseModel):
+    title: str
+    description: str = ""
+    tag_ids: list[int]
+    responsible_ids: list[int] = []
+    status: str = "idea"
+
+
+class CardPatch(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    tag_ids: list[int] | None = None
+    responsible_ids: list[int] | None = None
+    status: str | None = None
+
+
+@router.get("/api/kanban/cards")
+def api_list_cards(conn: sqlite3.Connection = Depends(get_db)):
+    cards = conn.execute("SELECT * FROM cards ORDER BY status, position").fetchall()
+    return [_serialize_card(conn, c) for c in cards]
+
+
+@router.post("/api/kanban/cards")
+def api_create_card(
+    body: CardIn, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)
+):
+    if body.status not in dict(COLUMNS):
+        raise HTTPException(status_code=400, detail=f"status inválido: {body.status}")
+    if not body.tag_ids:
+        raise HTTPException(status_code=400, detail="Selecione ao menos uma tag")
+    max_pos = conn.execute(
+        "SELECT COALESCE(MAX(position), -1) AS p FROM cards WHERE status = ?", (body.status,)
+    ).fetchone()["p"]
+    cur = conn.execute(
+        "INSERT INTO cards (title, description, status, position) VALUES (?, ?, ?, ?)",
+        (body.title, body.description, body.status, max_pos + 1),
+    )
+    card_id = cur.lastrowid
+    _save_tags(conn, card_id, body.tag_ids)
+    for uid in set(body.responsible_ids) or {user["id"]}:
+        conn.execute(
+            "INSERT OR IGNORE INTO card_responsibles (card_id, user_id) VALUES (?, ?)",
+            (card_id, uid),
+        )
+    conn.commit()
+    card = conn.execute("SELECT * FROM cards WHERE id = ?", (card_id,)).fetchone()
+    return _serialize_card(conn, card)
+
+
+@router.post("/api/kanban/cards/{card_id}")
+def api_update_card(
+    card_id: int,
+    body: CardPatch,
+    user=Depends(require_user),
+    conn: sqlite3.Connection = Depends(get_db),
+):
+    card = conn.execute("SELECT * FROM cards WHERE id = ?", (card_id,)).fetchone()
+    if not card:
+        raise HTTPException(status_code=404)
+
+    title = body.title if body.title is not None else card["title"]
+    description = body.description if body.description is not None else card["description"]
+    status = body.status if body.status is not None else card["status"]
+    if status not in dict(COLUMNS):
+        raise HTTPException(status_code=400, detail=f"status inválido: {status}")
+
+    position = card["position"]
+    if body.status is not None and body.status != card["status"]:
+        max_pos = conn.execute(
+            "SELECT COALESCE(MAX(position), -1) AS p FROM cards WHERE status = ?", (status,)
+        ).fetchone()["p"]
+        position = max_pos + 1
+
+    conn.execute(
+        "UPDATE cards SET title = ?, description = ?, status = ?, position = ? WHERE id = ?",
+        (title, description, status, position, card_id),
+    )
+    if body.tag_ids is not None:
+        if not body.tag_ids:
+            raise HTTPException(status_code=400, detail="Selecione ao menos uma tag")
+        _save_tags(conn, card_id, body.tag_ids)
+    if body.responsible_ids is not None:
+        conn.execute("DELETE FROM card_responsibles WHERE card_id = ?", (card_id,))
+        for uid in set(body.responsible_ids) or {user["id"]}:
+            conn.execute(
+                "INSERT OR IGNORE INTO card_responsibles (card_id, user_id) VALUES (?, ?)",
+                (card_id, uid),
+            )
+    conn.commit()
+    card = conn.execute("SELECT * FROM cards WHERE id = ?", (card_id,)).fetchone()
+    return _serialize_card(conn, card)

@@ -78,6 +78,15 @@ CREATE TABLE IF NOT EXISTS learning_items (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+CREATE TABLE IF NOT EXISTS api_tokens (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_used_at TEXT
+);
+
 CREATE TABLE IF NOT EXISTS roadmap_items (
     id INTEGER PRIMARY KEY,
     title TEXT NOT NULL,

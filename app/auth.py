@@ -5,6 +5,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Request
 
 from app.db import get_db
+from app.security import hash_api_token
 
 SESSION_COOKIE = "session_token"
 
@@ -25,13 +26,31 @@ def get_current_user(
     request: Request, conn: sqlite3.Connection = Depends(get_db)
 ) -> Optional[sqlite3.Row]:
     token = request.cookies.get(SESSION_COOKIE)
-    if not token:
-        return None
-    return conn.execute(
-        "SELECT users.* FROM sessions JOIN users ON users.id = sessions.user_id "
-        "WHERE sessions.token = ?",
-        (token,),
-    ).fetchone()
+    if token:
+        return conn.execute(
+            "SELECT users.* FROM sessions JOIN users ON users.id = sessions.user_id "
+            "WHERE sessions.token = ?",
+            (token,),
+        ).fetchone()
+
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        api_token = auth_header.removeprefix("Bearer ").strip()
+        row = conn.execute(
+            "SELECT users.*, api_tokens.id AS api_token_id FROM api_tokens "
+            "JOIN users ON users.id = api_tokens.user_id "
+            "WHERE api_tokens.token_hash = ?",
+            (hash_api_token(api_token),),
+        ).fetchone()
+        if row:
+            conn.execute(
+                "UPDATE api_tokens SET last_used_at = datetime('now') WHERE id = ?",
+                (row["api_token_id"],),
+            )
+            conn.commit()
+        return row
+
+    return None
 
 
 def require_user(user: Optional[sqlite3.Row] = Depends(get_current_user)) -> sqlite3.Row:

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Tokens de API{% endblock %}
+{% block content %}
+<main class="container" style="padding-top:48px;padding-bottom:72px">
+<h1>Tokens de API</h1>
+<p class="text-muted" style="font-style:italic;margin-top:-6px">pra ferramentas externas (MCP, scripts) usarem em vez da sua senha</p>
+
+{% if new_token %}
+<div class="card elev-sm" style="margin-top:var(--space-4);border-color:var(--color-accent);background:var(--color-accent-100)">
+    <div class="card-title" style="color:var(--color-accent-800)">Token criado — copie agora, ele não aparece de novo</div>
+    <code style="display:block;padding:10px;background:var(--color-bg);border-radius:var(--radius-md);word-break:break-all;font-size:13px;margin-top:8px">{{ new_token }}</code>
+</div>
+{% endif %}
+
+<h2 style="margin-top:var(--space-6)">Novo token</h2>
+<form class="card-form" method="post" action="/tokens" style="max-width:420px;display:flex;gap:8px;align-items:flex-end">
+    <div class="field" style="flex:1;margin-bottom:0">
+        <label>Nome (pra você lembrar pra que serve)</label>
+        <input class="input" type="text" name="name" placeholder="ex. MCP no meu notebook" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Gerar</button>
+</form>
+
+<h2 style="margin-top:var(--space-8)">Seus tokens</h2>
+<table>
+    <tr><th>Nome</th><th>Criado em</th><th>Último uso</th><th></th></tr>
+    {% for t in tokens %}
+    <tr>
+        <td>{{ t.name }}</td>
+        <td class="tnum">{{ t.created_at }}</td>
+        <td class="tnum">{{ t.last_used_at or '—' }}</td>
+        <td>
+            <form class="inline-form" method="post" action="/tokens/{{ t.id }}/revoke" onsubmit="return confirm('Revogar este token? Quem estiver usando ele para de funcionar na hora.')">
+                <button type="submit" class="link-button">revogar</button>
+            </form>
+        </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="text-muted" style="font-style:italic">Nenhum token ainda.</td></tr>
+    {% endfor %}
+</table>
+</main>
+{% endblock %}

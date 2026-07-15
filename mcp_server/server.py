@@ -11,24 +11,18 @@ import httpx
 from mcp.server.fastmcp import FastMCP
 
 BASE_URL = os.environ.get("SQUADLOG_URL", "http://127.0.0.1:8000").rstrip("/")
-EMAIL = os.environ.get("SQUADLOG_EMAIL")
-PASSWORD = os.environ.get("SQUADLOG_PASSWORD")
+TOKEN = os.environ.get("SQUADLOG_TOKEN")
 
-if not EMAIL or not PASSWORD:
-    print("SQUADLOG_EMAIL and SQUADLOG_PASSWORD must be set", file=sys.stderr)
+if not TOKEN:
+    print("SQUADLOG_TOKEN must be set (gere um em /tokens no squad-log)", file=sys.stderr)
     sys.exit(1)
 
-client = httpx.Client(base_url=BASE_URL, timeout=15.0, follow_redirects=True)
-
-
-def _login() -> None:
-    r = client.post("/login", data={"email": EMAIL, "password": PASSWORD})
-    r.raise_for_status()
-    if "session_token" not in client.cookies:
-        raise RuntimeError("login succeeded but no session cookie was set")
-
-
-_login()
+client = httpx.Client(
+    base_url=BASE_URL,
+    timeout=15.0,
+    follow_redirects=True,
+    headers={"Authorization": f"Bearer {TOKEN}"},
+)
 
 mcp = FastMCP("squad-log")
 

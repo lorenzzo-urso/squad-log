@@ -27,6 +27,7 @@
             {% if user.role == 'admin' %}<a href="/admin" {% if request.url.path.startswith('/admin') %}aria-current="page"{% endif %}>Admin</a>{% endif %}
             <span class="who">
                 <span class="text-muted">{{ user.name }}</span>
+                <a href="/tokens" {% if request.url.path.startswith('/tokens') %}aria-current="page"{% endif %}>Tokens</a>
                 <form method="post" action="/logout" class="inline-form">
                     <button type="submit" class="link-button">Sair</button>
                 </form>

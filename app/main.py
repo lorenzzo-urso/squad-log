@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.db import UPLOADS_DIR, init_db
-from app.routes import admin, auth, changelog, dashboard, kanban, learning, radar, roadmap, timeline
+from app.routes import admin, auth, changelog, dashboard, kanban, learning, radar, roadmap, timeline, tokens
 
 app = FastAPI(title="Timeline do Squad")
 
@@ -45,3 +45,4 @@ app.include_router(changelog.router)
 app.include_router(learning.router)
 app.include_router(dashboard.router)
 app.include_router(radar.router)
+app.include_router(tokens.router)

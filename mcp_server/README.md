@@ -6,10 +6,11 @@ Kanban do squad-log, sem precisar abrir o navegador.
 **Sem tool de apagar, de propósito.** O agente pode listar, criar e editar —
 nunca remover. Deletar continua sendo só na interface web, por uma pessoa.
 
-A autenticação usa login normal (email/senha) contra `/login`, guardando o
-cookie de sessão — quem estiver configurado ali é o dono de tudo que o agente
-criar ou alterar (edição de registro publicado ainda exige admin, mesma regra
-da interface web).
+A autenticação usa um **token de API pessoal**, gerado em `/tokens` no
+squad-log — não é a senha de login. Quem gerou o token é o dono de tudo que o
+agente criar ou alterar (edição de registro publicado ainda exige admin,
+mesma regra da interface web). Revogar o token em `/tokens` desliga o acesso
+na hora.
 
 ## Instalar (cada pessoa faz a própria cópia)
 
@@ -29,21 +30,25 @@ então **é ignorado pelo git** (`.mcp.json` está no `.gitignore`) — nunca é
 compartilhado nem sobe pro GitHub. Cada pessoa cria o próprio, com as
 próprias credenciais.
 
-1. Copie o template:
+1. Gere um token: logue no squad-log, vá em **Tokens** (menu do usuário) e crie um novo. Copie o valor mostrado — ele só aparece uma vez.
+2. Copie o template:
    ```bash
    cp .mcp.json.example .mcp.json
    ```
-2. Edite `.mcp.json` na raiz do repo e preencha:
+3. Edite `.mcp.json` na raiz do repo e preencha:
 
    | Campo | Valor |
    |---|---|
    | `command` / `args` | caminho completo pro `python.exe` do seu venv e pro `server.py` — ajuste pra onde *você* clonou o repo (o caminho é diferente por máquina) |
    | `SQUADLOG_URL` | ex. `http://192.168.1.50:8000` (IP da rede) ou `http://127.0.0.1:8000` se for testar na mesma máquina do servidor |
-   | `SQUADLOG_EMAIL` | seu email de login no squad-log |
-   | `SQUADLOG_PASSWORD` | sua senha |
+   | `SQUADLOG_TOKEN` | o token gerado em `/tokens` |
 
-3. Feche e abra o Claude Code de novo nesse projeto — é assim que ele detecta um `.mcp.json` novo. Na primeira vez ele pergunta se você confia no servidor "squad-log"; aprova.
-4. Teste pedindo algo tipo *"liste os registros do squad-log via MCP"*.
+4. Feche e abra o Claude Code de novo nesse projeto — é assim que ele detecta um `.mcp.json` novo. Na primeira vez ele pergunta se você confia no servidor "squad-log"; aprova.
+5. Teste pedindo algo tipo *"liste os registros do squad-log via MCP"*.
+
+Se trocar de senha ou sair do squad, isso **não afeta** o token — ele é
+independente do login. Se quiser revogar o acesso do MCP, revogue o token em
+`/tokens`, sem mexer na senha.
 
 ## Tools disponíveis
 

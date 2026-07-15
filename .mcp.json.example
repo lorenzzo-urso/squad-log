@@ -5,8 +5,7 @@
       "args": ["CAMINHO\\PARA\\O\\REPO\\mcp_server\\server.py"],
       "env": {
         "SQUADLOG_URL": "http://192.168.1.50:8000",
-        "SQUADLOG_EMAIL": "seu-email@empresa.com",
-        "SQUADLOG_PASSWORD": "sua-senha"
+        "SQUADLOG_TOKEN": "sqlg_gerado-em-/tokens"
       }
     }
   }

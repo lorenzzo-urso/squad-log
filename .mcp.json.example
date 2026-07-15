@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "squad-log": {
+      "command": "CAMINHO\\PARA\\O\\REPO\\mcp_server\\.venv\\Scripts\\python.exe",
+      "args": ["CAMINHO\\PARA\\O\\REPO\\mcp_server\\server.py"],
+      "env": {
+        "SQUADLOG_URL": "http://192.168.1.50:8000",
+        "SQUADLOG_EMAIL": "seu-email@empresa.com",
+        "SQUADLOG_PASSWORD": "sua-senha"
+      }
+    }
+  }
+}

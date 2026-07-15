@@ -2,6 +2,12 @@
 
 Registro do que mudou no próprio Registro da Equipe, por versão.
 
+## 2026-07-15
+
+- **Módulo Aprendizado**: nova área pra registrar cursos, palestras, livros e afins, por pessoa — base pro PDI.
+- **Extensão de captura** (`extension/`): captura páginas no navegador (curso, artigo, vídeo, livro) e envia direto pro Aprendizado via API, autenticado pela sessão de quem estiver logado — sem digitar nada na mão.
+- **Changelog, RSS e backup**: página `/changelog`, feed `/feed.xml`, e `backup.bat` pra exportar o volume Docker.
+
 ## 2026-07-14
 
 - **Correções de bugs do Kanban e Roadmap**: popup de card que ficava preso na tela após fechar, filtro quebrando com seleção vazia, coluna do Roadmap não podia ser escolhida ao criar um item.

@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "squad-log Capture",
+  "version": "2.0.0",
+  "description": "Captura conteúdo direto pro Aprendizado do squad-log",
+  "permissions": ["storage", "activeTab", "scripting", "tabs"],
+  "host_permissions": [
+    "https://api.anthropic.com/*",
+    "https://api.openai.com/*"
+  ],
+  "optional_host_permissions": ["http://*/*", "https://*/*"],
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "squad-log Capture"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>LogBook Capture</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+<!-- ── Header ──────────────────────────────────────────────────────────── -->
+<header class="header">
+  <div class="logo">Log<span>Book</span></div>
+  <div class="header-actions">
+    <button class="icon-btn" id="btn-book" title="Adicionar livro manualmente">📚</button>
+    <button class="icon-btn" id="btn-queue">
+      Fila <span class="badge hidden" id="badge-count">0</span>
+    </button>
+    <button class="icon-btn" id="btn-manage" title="Ver/gerenciar no squad-log">🗂</button>
+    <button class="icon-btn" id="btn-settings">⚙</button>
+  </div>
+</header>
+
+<!-- ── Capture view ─────────────────────────────────────────────────────── -->
+<div class="view" id="view-capture">
+  <div class="type-row">
+    <select id="sel-type">
+      <option value="conteudo">Conteúdo</option>
+      <option value="projeto">Projeto</option>
+    </select>
+    <select id="sel-subtype">
+      <option value="artigo">Artigo</option>
+      <option value="notícia">Notícia</option>
+      <option value="vídeo">Vídeo</option>
+      <option value="livro">Livro</option>
+      <option value="curso">Curso</option>
+      <option value="treinamento">Treinamento</option>
+    </select>
+  </div>
+
+  <div class="form">
+    <div class="field">
+      <label>Título</label>
+      <input type="text" id="f-title" placeholder="Título da entrada">
+    </div>
+
+    <div class="field" id="field-url">
+      <label>URL</label>
+      <input type="url" id="f-url" placeholder="https://...">
+    </div>
+
+    <div class="field" id="field-author">
+      <label>Autor / Fonte</label>
+      <input type="text" id="f-author" placeholder="Autor ou nome do site">
+    </div>
+
+    <!-- Projeto-only -->
+    <div class="field hidden" id="field-pitch">
+      <label>Pitch (uma linha)</label>
+      <input type="text" id="f-pitch" placeholder="O que é este projeto em uma frase">
+    </div>
+
+    <div class="field">
+      <label>Tags</label>
+      <input type="text" id="f-tags" placeholder="ai, produtividade, design">
+    </div>
+
+    <div class="field">
+      <label>
+        Status
+      </label>
+      <select id="sel-status">
+        <option value="consumido">Consumido</option>
+        <option value="em andamento">Em andamento</option>
+        <option value="abandonado">Abandonado</option>
+      </select>
+    </div>
+
+    <div class="field" id="field-rating">
+      <label>Avaliação</label>
+      <div class="rating" id="rating">
+        <span data-v="1">★</span>
+        <span data-v="2">★</span>
+        <span data-v="3">★</span>
+        <span data-v="4">★</span>
+        <span data-v="5">★</span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>
+        Minhas notas
+        <button class="ai-btn" id="btn-ai">✦ AI</button>
+      </label>
+      <textarea id="f-notes" rows="4" placeholder="O que achei relevante, o que aprendi, por que importa..."></textarea>
+    </div>
+
+    <!-- Projeto-only -->
+    <div class="field hidden" id="field-desc">
+      <label>Descrição / Problema</label>
+      <textarea id="f-desc" rows="3" placeholder="Qual problema resolve? Contexto do projeto..."></textarea>
+    </div>
+
+    <div class="field hidden" id="field-connections">
+      <label>Conexões sugeridas</label>
+      <div class="connections-list" id="f-connections"></div>
+    </div>
+  </div>
+
+  <div class="ai-status" id="ai-status"></div>
+
+  <div class="actions">
+    <button class="btn-primary" id="btn-add">+ Adicionar à fila</button>
+    <button class="btn-ghost" id="btn-discard">Descartar</button>
+  </div>
+</div>
+
+<!-- ── Queue view ────────────────────────────────────────────────────────── -->
+<div class="view hidden" id="view-queue">
+  <div class="queue-header">
+    <span class="count" id="queue-label">0 itens</span>
+    <button class="btn-push" id="btn-push" disabled>↑ Enviar</button>
+  </div>
+  <div class="count" id="whoami-label" style="margin-bottom:8px"></div>
+  <div class="queue-list" id="queue-list"></div>
+  <div id="push-toast"></div>
+  <div class="actions" style="margin-top:12px">
+    <button class="btn-ghost" id="btn-back-queue">← Voltar</button>
+  </div>
+</div>
+
+<!-- ── Settings view ─────────────────────────────────────────────────────── -->
+<div class="view hidden" id="view-settings">
+  <div class="settings-title">Configurações</div>
+  <div class="form">
+    <div class="field">
+      <label>AI Provider</label>
+      <select id="s-provider">
+        <option value="claude">Claude (Anthropic)</option>
+        <option value="openai">OpenAI</option>
+        <option value="none">Sem AI</option>
+      </select>
+    </div>
+    <div class="field" id="s-claude-row">
+      <label>Claude API Key</label>
+      <input type="password" id="s-claude-key" placeholder="sk-ant-api03-...">
+    </div>
+    <div class="field hidden" id="s-openai-row">
+      <label>OpenAI API Key</label>
+      <input type="password" id="s-openai-key" placeholder="sk-...">
+    </div>
+
+    <hr class="divider">
+
+    <div class="field">
+      <label>URL do squad-log</label>
+      <input type="url" id="s-squadlog-url" placeholder="http://192.168.1.50:8000">
+    </div>
+    <div class="field-hint" id="s-whoami-hint"></div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-primary" id="btn-save-settings">Salvar</button>
+    <button class="btn-ghost" id="btn-back-settings">← Voltar</button>
+  </div>
+</div>
+
+<!-- ── Book manual entry view ─────────────────────────────────────────────── -->
+<div class="view hidden" id="view-book">
+  <div class="settings-title">Adicionar livro</div>
+  <div class="form">
+    <div class="field">
+      <label>Título *</label>
+      <input type="text" id="bk-title" placeholder="Nome do livro">
+    </div>
+    <div class="field">
+      <label>Autor(a)</label>
+      <input type="text" id="bk-author" placeholder="Nome do autor(a)">
+    </div>
+    <div class="field">
+      <label>Status</label>
+      <select id="bk-status">
+        <option value="quero ler">Quero ler</option>
+        <option value="em andamento">Lendo agora</option>
+        <option value="consumido">Já li</option>
+        <option value="abandonado">Abandonado</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Tags</label>
+      <input type="text" id="bk-tags" placeholder="ficção, negócios, filosofia">
+    </div>
+    <div class="field" id="bk-field-rating">
+      <label>Avaliação</label>
+      <div class="rating" id="bk-rating">
+        <span data-v="1">★</span>
+        <span data-v="2">★</span>
+        <span data-v="3">★</span>
+        <span data-v="4">★</span>
+        <span data-v="5">★</span>
+      </div>
+    </div>
+    <div class="field">
+      <label>Notas</label>
+      <textarea id="bk-notes" rows="3" placeholder="Por que quer ler? O que achou?"></textarea>
+    </div>
+    <div class="field">
+      <label>Link (Amazon, Goodreads…)</label>
+      <input type="url" id="bk-url" placeholder="https://…">
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn-primary" id="btn-book-add">+ Adicionar à fila</button>
+    <button class="btn-ghost" id="btn-book-back">← Voltar</button>
+  </div>
+</div>
+
+<script src="chrome-mock.js"></script>
+<script src="popup.js" type="module"></script>
+</body>
+</html>

@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app.db import UPLOADS_DIR, init_db
@@ -7,6 +8,16 @@ from app.routes import admin, auth, changelog, kanban, learning, roadmap, timeli
 app = FastAPI(title="Timeline do Squad")
 
 UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+
+# Lets the LogBook browser extension (chrome-extension:// origin) call the
+# capture API with the user's existing session cookie. Internal tool, low risk.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origin_regex=r"chrome-extension://.*",
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")

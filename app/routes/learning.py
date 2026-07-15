@@ -1,8 +1,9 @@
 import sqlite3
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from pydantic import BaseModel
 
 from app.auth import get_current_user, require_user
 from app.db import get_db
@@ -10,7 +11,17 @@ from app.db import get_db
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
 
-TYPES = [("curso", "Curso"), ("palestra", "Palestra"), ("livro", "Livro"), ("outro", "Outro")]
+TYPES = [
+    ("curso", "Curso"),
+    ("palestra", "Palestra"),
+    ("livro", "Livro"),
+    ("artigo", "Artigo"),
+    ("noticia", "Notícia"),
+    ("video", "Vídeo"),
+    ("treinamento", "Treinamento"),
+    ("projeto", "Projeto"),
+    ("outro", "Outro"),
+]
 
 
 def _all_users(conn: sqlite3.Connection):
@@ -71,6 +82,18 @@ def learning_new_form(request: Request, user=Depends(require_user)):
     )
 
 
+def _insert_item(conn: sqlite3.Connection, owner_id: int, title, type_, description, link, consumed_at) -> int:
+    if type_ not in dict(TYPES):
+        raise HTTPException(status_code=400, detail=f"Tipo inválido: {type_}")
+    cur = conn.execute(
+        "INSERT INTO learning_items (user_id, title, type, description, link, consumed_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (owner_id, title, type_, description, link, consumed_at),
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
 @router.post("/aprendizado")
 def learning_create(
     title: str = Form(...),
@@ -81,15 +104,34 @@ def learning_create(
     user=Depends(require_user),
     conn: sqlite3.Connection = Depends(get_db),
 ):
-    if type not in dict(TYPES):
-        raise HTTPException(status_code=400)
-    conn.execute(
-        "INSERT INTO learning_items (user_id, title, type, description, link, consumed_at) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
-        (user["id"], title, type, description, link, consumed_at),
-    )
-    conn.commit()
+    # owner is always the logged-in session user — never trust a client-supplied id,
+    # so a shared browser can never attribute a capture to the wrong person.
+    _insert_item(conn, user["id"], title, type, description, link, consumed_at)
     return RedirectResponse("/aprendizado", status_code=303)
+
+
+@router.get("/api/whoami")
+def whoami(user=Depends(require_user)):
+    return {"id": user["id"], "name": user["name"]}
+
+
+class CaptureBody(BaseModel):
+    title: str
+    type: str
+    description: str = ""
+    link: str = ""
+    consumed_at: str
+
+
+@router.post("/api/learning")
+def capture_learning(
+    body: CaptureBody, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)
+):
+    # Same rule as the web form: owner comes only from the authenticated session.
+    item_id = _insert_item(
+        conn, user["id"], body.title, body.type, body.description, body.link, body.consumed_at
+    )
+    return JSONResponse({"ok": True, "id": item_id, "owner": user["name"]})
 
 
 def _require_owner_or_admin(item: sqlite3.Row, user: sqlite3.Row) -> None:

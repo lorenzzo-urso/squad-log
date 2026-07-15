@@ -70,7 +70,7 @@ CREATE TABLE IF NOT EXISTS learning_items (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id),
     title TEXT NOT NULL,
-    type TEXT NOT NULL CHECK (type IN ('curso', 'palestra', 'livro', 'outro')),
+    type TEXT NOT NULL,
     description TEXT,
     link TEXT,
     consumed_at TEXT NOT NULL,
@@ -111,6 +111,7 @@ def init_db() -> None:
         conn.executescript(SCHEMA)
         conn.commit()
         _migrate_card_tags(conn)
+        _migrate_learning_types(conn)
         _seed_admin(conn)
         _seed_default_tags(conn)
     finally:
@@ -126,6 +127,32 @@ def _migrate_card_tags(conn: sqlite3.Connection) -> None:
         "SELECT id, tech_tag_id FROM cards WHERE tech_tag_id IS NOT NULL"
     )
     conn.execute("ALTER TABLE cards DROP COLUMN tech_tag_id")
+    conn.commit()
+
+
+def _migrate_learning_types(conn: sqlite3.Connection) -> None:
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'learning_items'"
+    ).fetchone()
+    if not row or "CHECK" not in row["sql"]:
+        return
+    conn.executescript(
+        """
+        ALTER TABLE learning_items RENAME TO learning_items_old;
+        CREATE TABLE learning_items (
+            id INTEGER PRIMARY KEY,
+            user_id INTEGER NOT NULL REFERENCES users(id),
+            title TEXT NOT NULL,
+            type TEXT NOT NULL,
+            description TEXT,
+            link TEXT,
+            consumed_at TEXT NOT NULL,
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        INSERT INTO learning_items SELECT * FROM learning_items_old;
+        DROP TABLE learning_items_old;
+        """
+    )
     conn.commit()
 
 

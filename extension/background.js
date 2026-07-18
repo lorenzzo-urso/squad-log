@@ -1,3 +1,3 @@
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('[ContentBlog] Extension installed');
+  console.log('[squad-log Capture] Extension installed');
 });

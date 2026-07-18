@@ -26,13 +26,9 @@
 </div>
 
 <h2 style="margin-top:var(--space-8)">Cards concluídos por pessoa</h2>
-<div class="bar-list">
+<div class="stat-row">
     {% for row in done_by_person %}
-    <div class="bar-row">
-        <span class="bar-label">{{ row.name }}</span>
-        <div class="bar-track"><div class="bar-fill" style="width:{{ (row.n / max_done * 100) if max_done else 0 }}%"></div></div>
-        <span class="bar-value tnum">{{ row.n }}</span>
-    </div>
+    <div class="stat-tile"><div class="stat-value tnum">{{ row.n }}</div><div class="stat-label">{{ row.name }}</div></div>
     {% else %}
     <p class="text-muted" style="font-style:italic">Nenhum card concluído ainda.</p>
     {% endfor %}

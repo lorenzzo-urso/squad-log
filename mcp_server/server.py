@@ -27,23 +27,37 @@ client = httpx.Client(
 mcp = FastMCP("squad-log")
 
 
+def _unwrap(response: httpx.Response) -> dict | list:
+    """r.raise_for_status() alone only gives a generic '403 Forbidden' —
+    squad-log's API puts the actual reason in the JSON body (e.g. "Conta
+    leitor não pode criar ou editar", "Selecione ao menos uma tag"). Surface
+    that instead, so the agent (and the person reading its output) knows
+    why, not just that something failed."""
+    if response.is_success:
+        return response.json()
+    detail = None
+    try:
+        detail = response.json().get("detail")
+    except Exception:
+        pass
+    raise RuntimeError(detail or f"squad-log respondeu {response.status_code}")
+
+
 @mcp.tool()
 def list_posts() -> list[dict]:
     """Lista os registros (posts) publicados na Timeline do squad-log."""
-    r = client.get("/api/posts")
-    r.raise_for_status()
-    return r.json()
+    return _unwrap(client.get("/api/posts"))
 
 
 @mcp.tool()
 def create_post(title: str, summary: str, body: str, coauthor_ids: list[int] = []) -> dict:
     """Cria um novo registro na Timeline. body é markdown. coauthor_ids são ids de usuários."""
-    r = client.post(
-        "/api/posts",
-        json={"title": title, "summary": summary, "body": body, "coauthor_ids": coauthor_ids},
+    return _unwrap(
+        client.post(
+            "/api/posts",
+            json={"title": title, "summary": summary, "body": body, "coauthor_ids": coauthor_ids},
+        )
     )
-    r.raise_for_status()
-    return r.json()
 
 
 @mcp.tool()
@@ -51,20 +65,18 @@ def update_post(
     post_id: int, title: str, summary: str, body: str, coauthor_ids: list[int] = []
 ) -> dict:
     """Atualiza um registro existente na Timeline. Requer a conta configurada ser admin."""
-    r = client.post(
-        f"/api/posts/{post_id}",
-        json={"title": title, "summary": summary, "body": body, "coauthor_ids": coauthor_ids},
+    return _unwrap(
+        client.post(
+            f"/api/posts/{post_id}",
+            json={"title": title, "summary": summary, "body": body, "coauthor_ids": coauthor_ids},
+        )
     )
-    r.raise_for_status()
-    return r.json()
 
 
 @mcp.tool()
 def list_cards() -> list[dict]:
     """Lista os cards do Kanban (Ideia / Em andamento / Concluído), com tags e responsáveis."""
-    r = client.get("/api/kanban/cards")
-    r.raise_for_status()
-    return r.json()
+    return _unwrap(client.get("/api/kanban/cards"))
 
 
 @mcp.tool()
@@ -76,18 +88,18 @@ def create_card(
     status: str = "idea",
 ) -> dict:
     """Cria um card no Kanban. status: idea, doing ou done. tag_ids precisa ter ao menos 1 item."""
-    r = client.post(
-        "/api/kanban/cards",
-        json={
-            "title": title,
-            "description": description,
-            "tag_ids": tag_ids,
-            "responsible_ids": responsible_ids,
-            "status": status,
-        },
+    return _unwrap(
+        client.post(
+            "/api/kanban/cards",
+            json={
+                "title": title,
+                "description": description,
+                "tag_ids": tag_ids,
+                "responsible_ids": responsible_ids,
+                "status": status,
+            },
+        )
     )
-    r.raise_for_status()
-    return r.json()
 
 
 @mcp.tool()
@@ -112,17 +124,13 @@ def update_card(
         }.items()
         if v is not None
     }
-    r = client.post(f"/api/kanban/cards/{card_id}", json=payload)
-    r.raise_for_status()
-    return r.json()
+    return _unwrap(client.post(f"/api/kanban/cards/{card_id}", json=payload))
 
 
 @mcp.tool()
 def list_learning_items() -> list[dict]:
     """Lista os itens do Aprendizado (cursos, palestras, livros, artigos etc.) de todo o squad."""
-    r = client.get("/api/learning")
-    r.raise_for_status()
-    return r.json()
+    return _unwrap(client.get("/api/learning"))
 
 
 @mcp.tool()
@@ -132,18 +140,18 @@ def create_learning_item(
     """Adiciona um item ao Aprendizado, pra quem estiver dono do token configurado.
     type: curso, palestra, livro, artigo, noticia, video, treinamento, projeto ou outro.
     consumed_at: data no formato YYYY-MM-DD."""
-    r = client.post(
-        "/api/learning",
-        json={
-            "title": title,
-            "type": type,
-            "description": description,
-            "link": link,
-            "consumed_at": consumed_at,
-        },
+    return _unwrap(
+        client.post(
+            "/api/learning",
+            json={
+                "title": title,
+                "type": type,
+                "description": description,
+                "link": link,
+                "consumed_at": consumed_at,
+            },
+        )
     )
-    r.raise_for_status()
-    return r.json()
 
 
 if __name__ == "__main__":

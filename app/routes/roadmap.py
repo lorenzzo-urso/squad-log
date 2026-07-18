@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -5,11 +6,12 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.auth import get_current_user, require_user
+from app.auth import get_current_user, require_writer
 from app.db import get_db
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 COLUMNS = [("planned", "Planejado"), ("doing", "Em andamento"), ("shipped", "Entregue")]
 
@@ -28,7 +30,7 @@ def roadmap_board(request: Request, user=Depends(get_current_user), conn: sqlite
 
 
 @router.get("/roadmap/new", response_class=HTMLResponse)
-def item_new_form(request: Request, user=Depends(require_user)):
+def item_new_form(request: Request, user=Depends(require_writer)):
     return templates.TemplateResponse(
         request,
         "roadmap_form.html",
@@ -41,7 +43,7 @@ def item_create(
     title: str = Form(...),
     description: str = Form(...),
     status: str = Form("planned"),
-    user=Depends(require_user),
+    user=Depends(require_writer),
     conn: sqlite3.Connection = Depends(get_db),
 ):
     if status not in dict(COLUMNS):
@@ -49,16 +51,17 @@ def item_create(
     max_pos = conn.execute(
         "SELECT COALESCE(MAX(position), -1) AS p FROM roadmap_items WHERE status = ?", (status,)
     ).fetchone()["p"]
-    conn.execute(
+    cur = conn.execute(
         "INSERT INTO roadmap_items (title, description, status, position) VALUES (?, ?, ?, ?)",
         (title, description, status, max_pos + 1),
     )
     conn.commit()
+    logger.info("roadmap item created id=%s by user_id=%s", cur.lastrowid, user["id"])
     return RedirectResponse("/roadmap", status_code=303)
 
 
 @router.get("/roadmap/items/{item_id}/edit", response_class=HTMLResponse)
-def item_edit_form(item_id: int, request: Request, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)):
+def item_edit_form(item_id: int, request: Request, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)):
     item = conn.execute("SELECT * FROM roadmap_items WHERE id = ?", (item_id,)).fetchone()
     if not item:
         raise HTTPException(status_code=404)
@@ -73,7 +76,7 @@ def item_edit_submit(
     title: str = Form(...),
     description: str = Form(...),
     status: str = Form("planned"),
-    user=Depends(require_user),
+    user=Depends(require_writer),
     conn: sqlite3.Connection = Depends(get_db),
 ):
     if status not in dict(COLUMNS):
@@ -93,13 +96,15 @@ def item_edit_submit(
         (title, description, status, position, item_id),
     )
     conn.commit()
+    logger.info("roadmap item edited id=%s by user_id=%s", item_id, user["id"])
     return RedirectResponse("/roadmap", status_code=303)
 
 
 @router.post("/roadmap/items/{item_id}/delete")
-def item_delete(item_id: int, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)):
+def item_delete(item_id: int, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)):
     conn.execute("DELETE FROM roadmap_items WHERE id = ?", (item_id,))
     conn.commit()
+    logger.info("roadmap item deleted id=%s by user_id=%s", item_id, user["id"])
     return RedirectResponse("/roadmap", status_code=303)
 
 
@@ -109,7 +114,7 @@ class ReorderBody(BaseModel):
 
 
 @router.post("/roadmap/reorder")
-def roadmap_reorder(payload: ReorderBody, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)):
+def roadmap_reorder(payload: ReorderBody, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)):
     if payload.status not in dict(COLUMNS):
         raise HTTPException(status_code=400)
     for index, item_id in enumerate(payload.order):

@@ -1,11 +1,12 @@
-import os
+import logging
 import sqlite3
-from pathlib import Path
+
+from fastapi import Depends
 
 from app.security import hash_password
+from app.settings import Settings, get_settings
 
-DB_PATH = Path(os.environ.get("DB_PATH", "data/db/app.db"))
-UPLOADS_DIR = Path(os.environ.get("UPLOADS_DIR", "data/uploads"))
+logger = logging.getLogger(__name__)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS users (
@@ -14,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     password_salt TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('admin', 'membro')),
+    role TEXT NOT NULL CHECK (role IN ('admin', 'membro', 'leitor')),
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -98,35 +99,37 @@ CREATE TABLE IF NOT EXISTS roadmap_items (
 """
 
 
-def get_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_PATH)
+def get_connection(settings: Settings) -> sqlite3.Connection:
+    conn = sqlite3.connect(settings.db_path)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
 
 
-def get_db():
-    conn = get_connection()
+def get_db(settings: Settings = Depends(get_settings)):
+    conn = get_connection(settings)
     try:
         yield conn
     finally:
         conn.close()
 
 
-def init_db() -> None:
-    DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
-    conn = get_connection()
+def init_db(settings: Settings) -> None:
+    settings.db_path.parent.mkdir(parents=True, exist_ok=True)
+    settings.uploads_dir.mkdir(parents=True, exist_ok=True)
+    conn = get_connection(settings)
     try:
         conn.executescript(SCHEMA)
         conn.commit()
         _migrate_card_tags(conn)
         _migrate_learning_types(conn)
         _migrate_post_published_at(conn)
-        _seed_admin(conn)
+        _migrate_user_roles(conn)
+        _seed_admin(conn, settings)
         _seed_default_tags(conn)
     finally:
         conn.close()
+    logger.info("db initialized at %s", settings.db_path)
 
 
 def _migrate_card_tags(conn: sqlite3.Connection) -> None:
@@ -176,21 +179,46 @@ def _migrate_post_published_at(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def _seed_admin(conn: sqlite3.Connection) -> None:
+def _migrate_user_roles(conn: sqlite3.Connection) -> None:
+    row = conn.execute(
+        "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'users'"
+    ).fetchone()
+    if not row or "'leitor'" in row["sql"]:
+        return
+    conn.executescript(
+        """
+        ALTER TABLE users RENAME TO users_old;
+        CREATE TABLE users (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            password_hash TEXT NOT NULL,
+            password_salt TEXT NOT NULL,
+            role TEXT NOT NULL CHECK (role IN ('admin', 'membro', 'leitor')),
+            created_at TEXT NOT NULL DEFAULT (datetime('now'))
+        );
+        INSERT INTO users SELECT * FROM users_old;
+        DROP TABLE users_old;
+        """
+    )
+    conn.commit()
+
+
+def _seed_admin(conn: sqlite3.Connection, settings: Settings) -> None:
     row = conn.execute("SELECT COUNT(*) AS n FROM users").fetchone()
     if row["n"] > 0:
         return
-    email = os.environ.get("ADMIN_EMAIL")
-    password = os.environ.get("ADMIN_PASSWORD")
-    if not email or not password:
+    if not settings.admin_email or not settings.admin_password:
+        logger.warning("no ADMIN_EMAIL/ADMIN_PASSWORD set, skipping first-admin bootstrap")
         return
-    password_hash, salt = hash_password(password)
+    password_hash, salt = hash_password(settings.admin_password)
     conn.execute(
         "INSERT INTO users (name, email, password_hash, password_salt, role) "
         "VALUES (?, ?, ?, ?, 'admin')",
-        ("Admin", email, password_hash, salt),
+        ("Admin", settings.admin_email, password_hash, salt),
     )
     conn.commit()
+    logger.info("bootstrap admin created email=%s", settings.admin_email)
 
 
 def _seed_default_tags(conn: sqlite3.Connection) -> None:

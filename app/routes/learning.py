@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request
@@ -5,11 +6,12 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.auth import get_current_user, require_user
+from app.auth import get_current_user, require_user, require_writer
 from app.db import get_db
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 TYPES = [
     ("curso", "Curso"),
@@ -74,7 +76,7 @@ def learning_list(
 
 
 @router.get("/aprendizado/new", response_class=HTMLResponse)
-def learning_new_form(request: Request, user=Depends(require_user)):
+def learning_new_form(request: Request, user=Depends(require_writer)):
     return templates.TemplateResponse(
         request,
         "learning_form.html",
@@ -82,9 +84,18 @@ def learning_new_form(request: Request, user=Depends(require_user)):
     )
 
 
+def _validate_link(link: str) -> None:
+    # The template renders this straight into <a href="...">. Restricting to
+    # http(s) blocks a javascript: URL from sitting there waiting for a click
+    # — same trust boundary as the markdown link fix in timeline.py.
+    if link and not (link.startswith("http://") or link.startswith("https://")):
+        raise HTTPException(status_code=400, detail="Link precisa começar com http:// ou https://")
+
+
 def _insert_item(conn: sqlite3.Connection, owner_id: int, title, type_, description, link, consumed_at) -> int:
     if type_ not in dict(TYPES):
         raise HTTPException(status_code=400, detail=f"Tipo inválido: {type_}")
+    _validate_link(link)
     cur = conn.execute(
         "INSERT INTO learning_items (user_id, title, type, description, link, consumed_at) "
         "VALUES (?, ?, ?, ?, ?, ?)",
@@ -101,12 +112,13 @@ def learning_create(
     description: str = Form(""),
     link: str = Form(""),
     consumed_at: str = Form(...),
-    user=Depends(require_user),
+    user=Depends(require_writer),
     conn: sqlite3.Connection = Depends(get_db),
 ):
     # owner is always the logged-in session user — never trust a client-supplied id,
     # so a shared browser can never attribute a capture to the wrong person.
-    _insert_item(conn, user["id"], title, type, description, link, consumed_at)
+    item_id = _insert_item(conn, user["id"], title, type, description, link, consumed_at)
+    logger.info("learning item created id=%s by user_id=%s", item_id, user["id"])
     return RedirectResponse("/aprendizado", status_code=303)
 
 
@@ -134,12 +146,13 @@ class CaptureBody(BaseModel):
 
 @router.post("/api/learning")
 def capture_learning(
-    body: CaptureBody, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)
+    body: CaptureBody, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)
 ):
     # Same rule as the web form: owner comes only from the authenticated session.
     item_id = _insert_item(
         conn, user["id"], body.title, body.type, body.description, body.link, body.consumed_at
     )
+    logger.info("learning item captured id=%s by user_id=%s", item_id, user["id"])
     return JSONResponse({"ok": True, "id": item_id, "owner": user["name"]})
 
 
@@ -149,7 +162,7 @@ def _require_owner_or_admin(item: sqlite3.Row, user: sqlite3.Row) -> None:
 
 
 @router.get("/aprendizado/{item_id}/edit", response_class=HTMLResponse)
-def learning_edit_form(item_id: int, request: Request, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)):
+def learning_edit_form(item_id: int, request: Request, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)):
     item = conn.execute("SELECT * FROM learning_items WHERE id = ?", (item_id,)).fetchone()
     if not item:
         raise HTTPException(status_code=404)
@@ -167,7 +180,7 @@ def learning_edit_submit(
     description: str = Form(""),
     link: str = Form(""),
     consumed_at: str = Form(...),
-    user=Depends(require_user),
+    user=Depends(require_writer),
     conn: sqlite3.Connection = Depends(get_db),
 ):
     item = conn.execute("SELECT * FROM learning_items WHERE id = ?", (item_id,)).fetchone()
@@ -176,20 +189,23 @@ def learning_edit_submit(
     _require_owner_or_admin(item, user)
     if type not in dict(TYPES):
         raise HTTPException(status_code=400)
+    _validate_link(link)
     conn.execute(
         "UPDATE learning_items SET title = ?, type = ?, description = ?, link = ?, consumed_at = ? WHERE id = ?",
         (title, type, description, link, consumed_at, item_id),
     )
     conn.commit()
+    logger.info("learning item edited id=%s by user_id=%s", item_id, user["id"])
     return RedirectResponse("/aprendizado", status_code=303)
 
 
 @router.post("/aprendizado/{item_id}/delete")
-def learning_delete(item_id: int, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)):
+def learning_delete(item_id: int, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)):
     item = conn.execute("SELECT * FROM learning_items WHERE id = ?", (item_id,)).fetchone()
     if not item:
         raise HTTPException(status_code=404)
     _require_owner_or_admin(item, user)
     conn.execute("DELETE FROM learning_items WHERE id = ?", (item_id,))
     conn.commit()
+    logger.info("learning item deleted id=%s by user_id=%s", item_id, user["id"])
     return RedirectResponse("/aprendizado", status_code=303)

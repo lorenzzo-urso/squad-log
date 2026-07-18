@@ -59,7 +59,16 @@ def require_user(user: Optional[sqlite3.Row] = Depends(get_current_user)) -> sql
     return user
 
 
-def require_admin(user: sqlite3.Row = Depends(require_user)) -> sqlite3.Row:
+def require_writer(user: sqlite3.Row = Depends(require_user)) -> sqlite3.Row:
+    """Authenticated *and* allowed to create/edit content. `leitor` accounts
+    (external colleagues/managers who consume via MCP but shouldn't publish)
+    pass require_user but stop here."""
+    if user["role"] == "leitor":
+        raise HTTPException(status_code=403, detail="Conta leitor não pode criar ou editar")
+    return user
+
+
+def require_admin(user: sqlite3.Row = Depends(require_writer)) -> sqlite3.Row:
     if user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Apenas admin pode fazer isso")
     return user

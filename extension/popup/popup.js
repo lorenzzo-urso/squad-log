@@ -181,15 +181,26 @@ function renderConnections(ids, reasons) {
   for (const { id, entry } of relevant) {
     const el = document.createElement('div');
     el.className = 'conn-item';
-    el.innerHTML = `
-      <input type="checkbox" id="conn-${id}">
-      <div>
-        <div class="conn-title">${entry.title.slice(0, 55)}</div>
-        <div class="conn-reason">${reasons[id] || ''}</div>
-      </div>`;
-    el.querySelector('input').addEventListener('change', ev => {
+
+    const checkbox = document.createElement('input');
+    checkbox.type = 'checkbox';
+    checkbox.id = `conn-${id}`;
+    checkbox.addEventListener('change', ev => {
       ev.target.checked ? selectedConnections.add(id) : selectedConnections.delete(id);
     });
+
+    // entry.title/reasons[id] come from AI suggestions and other captured
+    // pages — never trusted enough for innerHTML. textContent only.
+    const titleEl = document.createElement('div');
+    titleEl.className = 'conn-title';
+    titleEl.textContent = entry.title.slice(0, 55);
+    const reasonEl = document.createElement('div');
+    reasonEl.className = 'conn-reason';
+    reasonEl.textContent = reasons[id] || '';
+    const info = document.createElement('div');
+    info.append(titleEl, reasonEl);
+
+    el.append(checkbox, info);
     list.appendChild(el);
   }
   toggle('field-connections', true);
@@ -219,15 +230,33 @@ async function renderQueue() {
   q.forEach(item => {
     const el = document.createElement('div');
     el.className = 'q-item';
-    el.innerHTML = `
-      <span class="q-type">${item.subtype}</span>
-      <span class="q-title" title="${item.title}">${item.title || '(sem título)'}</span>
-      <button class="q-remove" data-id="${item.id}" title="Remover">✕</button>`;
-    el.querySelector('.q-remove').addEventListener('click', async ev => {
-      await removeFromQueue(ev.currentTarget.dataset.id);
+
+    // item.title is captured from an arbitrary web page (its <title> or meta
+    // tags) — treat it as hostile. textContent/property assignment only,
+    // never string-built innerHTML, which would let a crafted page title
+    // execute script inside the extension popup (with access to the stored
+    // AI API keys).
+    const typeEl = document.createElement('span');
+    typeEl.className = 'q-type';
+    typeEl.textContent = item.subtype;
+
+    const titleEl = document.createElement('span');
+    titleEl.className = 'q-title';
+    titleEl.title = item.title || '';
+    titleEl.textContent = item.title || '(sem título)';
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'q-remove';
+    removeBtn.dataset.id = item.id;
+    removeBtn.title = 'Remover';
+    removeBtn.textContent = '✕';
+    removeBtn.addEventListener('click', async () => {
+      await removeFromQueue(item.id);
       await renderQueue();
       await refreshBadge();
     });
+
+    el.append(typeEl, titleEl, removeBtn);
     list.appendChild(el);
   });
 }
@@ -445,7 +474,13 @@ function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 function toast(containerId, msg, type) {
   const el = $(containerId);
-  el.innerHTML = `<div class="toast ${type}">${msg}</div>`;
+  el.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = `toast ${type}`;
+  // msg often embeds a captured entry's title (see pushToSquadLog) — same
+  // untrusted-text rule as renderQueue/renderConnections applies here.
+  div.textContent = msg;
+  el.appendChild(div);
   if (type === 'success') setTimeout(() => { el.innerHTML = ''; }, 5000);
 }
 

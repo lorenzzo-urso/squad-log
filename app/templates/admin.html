@@ -4,7 +4,7 @@
 <main class="container" style="padding-top:48px;padding-bottom:72px">
 <h1>Admin</h1>
 
-<h2>Usuários ({{ users | length }}/{{ max_users }})</h2>
+<h2>Usuários ({{ users | length }} total &middot; {{ write_user_count }}/{{ max_users }} com acesso de escrita)</h2>
 <table>
     <tr><th>Nome</th><th>Email</th><th>Papel</th><th></th></tr>
     {% for u in users %}
@@ -37,7 +37,10 @@
     {% endfor %}
 </table>
 
-{% if users | length < max_users %}
+{% if write_user_count >= max_users %}
+<p class="text-muted">Limite de {{ max_users }} contas de escrita (admin/membro) atingido —
+    só é possível cadastrar leitor até alguma conta de escrita ser removida.</p>
+{% endif %}
 <h3>Novo usuário</h3>
 <form style="max-width:420px" method="post" action="/admin/users">
     <div class="field"><label>Nome</label><input class="input" type="text" name="name" required></div>
@@ -48,13 +51,11 @@
         <select class="input" name="role">
             <option value="membro">Membro</option>
             <option value="admin">Admin</option>
+            <option value="leitor">Leitor (só consulta via MCP)</option>
         </select>
     </div>
     <button type="submit" class="btn btn-primary">Criar</button>
 </form>
-{% else %}
-<p class="text-muted">Limite de {{ max_users }} usuários atingido.</p>
-{% endif %}
 
 <h2 style="margin-top:var(--space-8)">Tags de produto/tecnologia</h2>
 <ul style="list-style:none;padding:0;display:flex;flex-direction:column;gap:8px">

@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 
 from fastapi import APIRouter, Depends, Form, Request
@@ -10,6 +11,7 @@ from app.security import verify_password
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 
 @router.get("/login", response_class=HTMLResponse)
@@ -28,6 +30,7 @@ def login_submit(
 ):
     row = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
     if not row or not verify_password(password, row["password_hash"], row["password_salt"]):
+        logger.warning("login failed email=%s", email)
         return templates.TemplateResponse(
             request,
             "login.html",
@@ -35,6 +38,7 @@ def login_submit(
             status_code=401,
         )
     token = create_session(conn, row["id"])
+    logger.info("login ok user_id=%s email=%s", row["id"], email)
     response = RedirectResponse("/timeline", status_code=303)
     response.set_cookie(SESSION_COOKIE, token, httponly=True, samesite="lax")
     return response
@@ -45,6 +49,7 @@ def logout(request: Request, conn: sqlite3.Connection = Depends(get_db)):
     token = request.cookies.get(SESSION_COOKIE)
     if token:
         delete_session(conn, token)
+        logger.info("logout")
     response = RedirectResponse("/timeline", status_code=303)
     response.delete_cookie(SESSION_COOKIE)
     return response

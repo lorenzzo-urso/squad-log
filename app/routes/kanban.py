@@ -1,3 +1,4 @@
+import logging
 import sqlite3
 from urllib.parse import quote
 
@@ -6,11 +7,12 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 
-from app.auth import get_current_user, require_user
+from app.auth import get_current_user, require_writer
 from app.db import get_db
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 COLUMNS = [("idea", "Ideia"), ("doing", "Em andamento"), ("done", "Concluído")]
 
@@ -21,6 +23,20 @@ def _tech_tags(conn: sqlite3.Connection):
 
 def _all_users(conn: sqlite3.Connection):
     return conn.execute("SELECT id, name FROM users ORDER BY name").fetchall()
+
+
+def _users_with_cards(conn: sqlite3.Connection):
+    """For the board's "filter by person" dropdown specifically — not for
+    responsible-assignment forms, which need to list everyone (including a
+    person who hasn't been assigned a card yet). A filter option for someone
+    with zero cards always returns an empty board, so it doesn't belong
+    here; this naturally excludes admin-only accounts with no real work
+    attached, without a manual per-account flag."""
+    return conn.execute(
+        "SELECT DISTINCT users.id, users.name FROM users "
+        "JOIN card_responsibles ON card_responsibles.user_id = users.id "
+        "ORDER BY users.name"
+    ).fetchall()
 
 
 def _card_responsibles(conn: sqlite3.Connection, card_id: int):
@@ -88,7 +104,7 @@ def kanban_board(
             "user": user,
             "columns": COLUMNS,
             "cards_by_column": columns,
-            "all_users": _all_users(conn),
+            "all_users": _users_with_cards(conn),
             "all_tags": _tech_tags(conn),
             "filter_person": person_id,
             "filter_tag": tag_id,
@@ -97,7 +113,7 @@ def kanban_board(
 
 
 @router.get("/kanban/new", response_class=HTMLResponse)
-def card_new_form(request: Request, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)):
+def card_new_form(request: Request, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)):
     return templates.TemplateResponse(
         request,
         "kanban_form.html",
@@ -128,7 +144,7 @@ def card_create(
     description: str = Form(""),
     tag_ids: list[int] = Form(default=[]),
     responsible_ids: list[int] = Form(default=[]),
-    user=Depends(require_user),
+    user=Depends(require_writer),
     conn: sqlite3.Connection = Depends(get_db),
 ):
     if not tag_ids:
@@ -148,11 +164,12 @@ def card_create(
             (card_id, uid),
         )
     conn.commit()
+    logger.info("card created id=%s by user_id=%s", card_id, user["id"])
     return RedirectResponse("/kanban", status_code=303)
 
 
 @router.get("/kanban/cards/{card_id}/edit", response_class=HTMLResponse)
-def card_edit_form(card_id: int, request: Request, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)):
+def card_edit_form(card_id: int, request: Request, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)):
     card = conn.execute("SELECT * FROM cards WHERE id = ?", (card_id,)).fetchone()
     if not card:
         raise HTTPException(status_code=404)
@@ -180,7 +197,7 @@ def card_edit_submit(
     description: str = Form(""),
     tag_ids: list[int] = Form(default=[]),
     responsible_ids: list[int] = Form(default=[]),
-    user=Depends(require_user),
+    user=Depends(require_writer),
     conn: sqlite3.Connection = Depends(get_db),
 ):
     card = conn.execute("SELECT * FROM cards WHERE id = ?", (card_id,)).fetchone()
@@ -200,21 +217,24 @@ def card_edit_submit(
             (card_id, uid),
         )
     conn.commit()
+    logger.info("card edited id=%s by user_id=%s", card_id, user["id"])
     return RedirectResponse("/kanban", status_code=303)
 
 
 @router.post("/kanban/cards/{card_id}/delete")
-def card_delete(card_id: int, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)):
+def card_delete(card_id: int, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)):
     conn.execute("DELETE FROM cards WHERE id = ?", (card_id,))
     conn.commit()
+    logger.info("card deleted id=%s by user_id=%s", card_id, user["id"])
     return RedirectResponse("/kanban", status_code=303)
 
 
 @router.post("/kanban/cards/{card_id}/publish")
-def card_publish(card_id: int, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)):
+def card_publish(card_id: int, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)):
     card = conn.execute("SELECT * FROM cards WHERE id = ?", (card_id,)).fetchone()
     if not card:
         raise HTTPException(status_code=404)
+    logger.info("card publish-as-post id=%s by user_id=%s", card_id, user["id"])
     title = quote(card["title"])
     body = quote(card["description"] or "")
     return RedirectResponse(f"/posts/new?title={title}&body={body}", status_code=303)
@@ -226,7 +246,7 @@ class ReorderBody(BaseModel):
 
 
 @router.post("/kanban/reorder")
-def kanban_reorder(payload: ReorderBody, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)):
+def kanban_reorder(payload: ReorderBody, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)):
     if payload.status not in dict(COLUMNS):
         raise HTTPException(status_code=400)
     for index, card_id in enumerate(payload.order):
@@ -271,7 +291,7 @@ def api_list_cards(conn: sqlite3.Connection = Depends(get_db)):
 
 @router.post("/api/kanban/cards")
 def api_create_card(
-    body: CardIn, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)
+    body: CardIn, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)
 ):
     if body.status not in dict(COLUMNS):
         raise HTTPException(status_code=400, detail=f"status inválido: {body.status}")
@@ -300,7 +320,7 @@ def api_create_card(
 def api_update_card(
     card_id: int,
     body: CardPatch,
-    user=Depends(require_user),
+    user=Depends(require_writer),
     conn: sqlite3.Connection = Depends(get_db),
 ):
     card = conn.execute("SELECT * FROM cards WHERE id = ?", (card_id,)).fetchone()

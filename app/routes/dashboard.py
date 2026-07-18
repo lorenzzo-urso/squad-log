@@ -20,14 +20,16 @@ def dashboard(request: Request, user=Depends(get_current_user), conn: sqlite3.Co
     posts_by_month = list(reversed(posts_by_month))
     max_posts_month = max((row["n"] for row in posts_by_month), default=0)
 
+    # Ordered by name, not by count: a per-person number is visibility, a
+    # ranking is a scoreboard — see PRD.md section 5 ("jardim, não
+    # competição"). No bar/magnitude comparison in the template either.
     done_by_person = conn.execute(
         "SELECT users.name AS name, COUNT(DISTINCT cards.id) AS n FROM cards "
         "JOIN card_responsibles ON card_responsibles.card_id = cards.id "
         "JOIN users ON users.id = card_responsibles.user_id "
         "WHERE cards.status = 'done' "
-        "GROUP BY users.id ORDER BY n DESC"
+        "GROUP BY users.id ORDER BY users.name ASC"
     ).fetchall()
-    max_done = max((row["n"] for row in done_by_person), default=0)
 
     totals = {
         "posts": conn.execute("SELECT COUNT(*) AS n FROM posts").fetchone()["n"],
@@ -49,7 +51,6 @@ def dashboard(request: Request, user=Depends(get_current_user), conn: sqlite3.Co
             "posts_by_month": posts_by_month,
             "max_posts_month": max_posts_month,
             "done_by_person": done_by_person,
-            "max_done": max_done,
             "totals": totals,
         },
     )

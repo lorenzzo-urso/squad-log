@@ -1,3 +1,4 @@
+import logging
 import math
 import sqlite3
 import uuid
@@ -6,20 +7,38 @@ from email.utils import format_datetime
 from pathlib import Path
 from typing import Optional
 
+import bleach
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 import markdown as md
 
-from app.auth import get_current_user, require_admin, require_user
-from app.db import UPLOADS_DIR, get_db
+from app.auth import get_current_user, require_admin, require_writer
+from app.db import get_db
+from app.settings import Settings, get_settings
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/templates")
+logger = logging.getLogger(__name__)
 
 MAX_COVER_BYTES = 5 * 1024 * 1024
 PER_PAGE = 6
+ALLOWED_COVER_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+
+# Vanilla `markdown` (no extensions enabled below) only ever produces this
+# tag set. Anything else in the output can only get there via raw HTML typed
+# into the post body, which is exactly what needs stripping.
+_ALLOWED_BODY_TAGS = [
+    "p", "br", "strong", "em", "ul", "ol", "li", "blockquote",
+    "code", "pre", "h1", "h2", "h3", "h4", "h5", "h6", "a", "img", "hr",
+]
+_ALLOWED_BODY_ATTRS = {"a": ["href", "title"], "img": ["src", "alt", "title"]}
+
+
+def render_post_body(body: str) -> str:
+    html = md.markdown(body)
+    return bleach.clean(html, tags=_ALLOWED_BODY_TAGS, attributes=_ALLOWED_BODY_ATTRS, strip=True)
 
 
 def _all_users(conn: sqlite3.Connection):
@@ -140,7 +159,7 @@ def post_new_form(
     request: Request,
     title: str = "",
     body: str = "",
-    user=Depends(require_user),
+    user=Depends(require_writer),
     conn: sqlite3.Connection = Depends(get_db),
 ):
     return templates.TemplateResponse(
@@ -161,21 +180,27 @@ def post_new_form(
     )
 
 
-def _save_cover(cover: Optional[UploadFile]) -> Optional[str]:
+def _save_cover(cover: Optional[UploadFile], uploads_dir: Path) -> Optional[str]:
     if not cover or not cover.filename:
         return None
     contents = cover.file.read()
     if len(contents) > MAX_COVER_BYTES:
         raise HTTPException(status_code=400, detail="Imagem maior que 5MB")
-    ext = Path(cover.filename).suffix
+    ext = Path(cover.filename).suffix.lower()
+    if ext not in ALLOWED_COVER_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Formato de imagem não permitido")
     filename = f"{uuid.uuid4().hex}{ext}"
-    (UPLOADS_DIR / filename).write_bytes(contents)
+    (uploads_dir / filename).write_bytes(contents)
     return filename
 
 
 @router.post("/posts/upload-image")
-def upload_inline_image(image: UploadFile, user=Depends(require_user)):
-    filename = _save_cover(image)
+def upload_inline_image(
+    image: UploadFile,
+    user=Depends(require_writer),
+    settings: Settings = Depends(get_settings),
+):
+    filename = _save_cover(image, settings.uploads_dir)
     if not filename:
         raise HTTPException(status_code=400, detail="Nenhuma imagem enviada")
     return {"url": f"/uploads/{filename}"}
@@ -190,10 +215,11 @@ def post_create(
     published_at: str = Form(...),
     coauthor_ids: list[int] = Form(default=[]),
     cover: Optional[UploadFile] = None,
-    user=Depends(require_user),
+    user=Depends(require_writer),
     conn: sqlite3.Connection = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ):
-    cover_path = _save_cover(cover)
+    cover_path = _save_cover(cover, settings.uploads_dir)
     cur = conn.execute(
         "INSERT INTO posts (title, summary, body, cover_path, author_id, published_at) "
         "VALUES (?, ?, ?, ?, ?, ?)",
@@ -206,6 +232,7 @@ def post_create(
             (post_id, uid),
         )
     conn.commit()
+    logger.info("post created id=%s author_id=%s", post_id, user["id"])
     return RedirectResponse(f"/timeline/{post_id}", status_code=303)
 
 
@@ -219,7 +246,7 @@ def post_detail(post_id: int, request: Request, user=Depends(get_current_user), 
     if not post:
         raise HTTPException(status_code=404)
     post = {**dict(post), "coauthors": _post_coauthors(conn, post_id)}
-    post["body_html"] = md.markdown(post["body"])
+    post["body_html"] = render_post_body(post["body"])
     print_date = datetime.now().strftime("%d/%m/%Y")
     return templates.TemplateResponse(
         request, "post_detail.html", {"user": user, "post": post, "print_date": print_date}
@@ -256,11 +283,12 @@ def post_edit_submit(
     cover: Optional[UploadFile] = None,
     user=Depends(require_admin),
     conn: sqlite3.Connection = Depends(get_db),
+    settings: Settings = Depends(get_settings),
 ):
     post = conn.execute("SELECT * FROM posts WHERE id = ?", (post_id,)).fetchone()
     if not post:
         raise HTTPException(status_code=404)
-    cover_path = _save_cover(cover) or post["cover_path"]
+    cover_path = _save_cover(cover, settings.uploads_dir) or post["cover_path"]
     conn.execute(
         "UPDATE posts SET title = ?, summary = ?, body = ?, cover_path = ?, published_at = ? WHERE id = ?",
         (title, summary, body, cover_path, published_at, post_id),
@@ -272,6 +300,7 @@ def post_edit_submit(
             (post_id, uid),
         )
     conn.commit()
+    logger.info("post edited id=%s by admin_id=%s", post_id, user["id"])
     return RedirectResponse(f"/timeline/{post_id}", status_code=303)
 
 
@@ -279,6 +308,7 @@ def post_edit_submit(
 def post_delete(post_id: int, user=Depends(require_admin), conn: sqlite3.Connection = Depends(get_db)):
     conn.execute("DELETE FROM posts WHERE id = ?", (post_id,))
     conn.commit()
+    logger.info("post deleted id=%s by admin_id=%s", post_id, user["id"])
     return RedirectResponse("/timeline", status_code=303)
 
 
@@ -305,7 +335,7 @@ def api_list_posts(conn: sqlite3.Connection = Depends(get_db)):
 
 @router.post("/api/posts")
 def api_create_post(
-    body: PostIn, user=Depends(require_user), conn: sqlite3.Connection = Depends(get_db)
+    body: PostIn, user=Depends(require_writer), conn: sqlite3.Connection = Depends(get_db)
 ):
     published_at = body.published_at or datetime.now().strftime("%Y-%m-%d")
     cur = conn.execute(

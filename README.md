@@ -9,6 +9,8 @@ Feito pra rodar dentro da rede de uma empresa pequena, com no máximo 4 pessoas 
 e leitura aberta pra qualquer um. Sem SaaS, sem conta em ferramenta nenhuma, um
 `docker compose up` e está no ar.
 
+![Central de documentação do squad-log: tutoriais, base de conhecimento e aprendizado, com os últimos docs atualizados](docs/img/docs-preview.png)
+
 ## O que tem aqui
 
 - **Timeline** — feed cronológico de posts em markdown: o que o squad entregou, decidiu ou

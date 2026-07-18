@@ -1,36 +1,38 @@
-/* Classical — design tokens + components, adapted from design_handoff_squad_log/styles.css */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Lora:wght@400;600&display=swap');
+/* Industry — design tokens + components, adopted site-wide from the
+   "Estética Palantir" Claude Design project (2026-07-18). Previous look
+   ("Classical", Cormorant Garamond + terracotta) lives in git history. */
+@import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;700&family=Barlow+Condensed:wght@400;600&display=swap');
 
 :root {
-  --color-bg: #f3f2f2;
-  --color-surface: #eae9e9;
-  --color-text: #201f1d;
-  --color-accent: #b68235;
-  --color-divider: color-mix(in srgb, #201f1d 16%, transparent);
+  --color-bg: #f2f2f3;
+  --color-surface: #e9e9ea;
+  --color-text: #1d1f20;
+  --color-accent: #5980a6;
+  --color-divider: color-mix(in srgb, #1d1f20 16%, transparent);
 
-  --color-neutral-100: #f8f4f4;
-  --color-neutral-200: #eae7e7;
-  --color-neutral-300: #d7d3d3;
-  --color-neutral-400: #bab6b6;
-  --color-neutral-500: #9b9797;
-  --color-neutral-600: #7d7979;
-  --color-neutral-700: #605d5d;
-  --color-neutral-800: #444141;
-  --color-neutral-900: #2d2b2b;
+  --color-neutral-100: #f5f5f8;
+  --color-neutral-200: #e7e7ea;
+  --color-neutral-300: #d4d4d7;
+  --color-neutral-400: #b7b7ba;
+  --color-neutral-500: #98989b;
+  --color-neutral-600: #7a7a7d;
+  --color-neutral-700: #5d5d60;
+  --color-neutral-800: #424244;
+  --color-neutral-900: #2b2b2d;
 
-  --color-accent-100: #fff3e4;
-  --color-accent-200: #ffe3bf;
-  --color-accent-300: #facb8d;
-  --color-accent-400: #e1ad66;
-  --color-accent-500: #c28d41;
-  --color-accent-600: #a06f24;
-  --color-accent-700: #7d5411;
-  --color-accent-800: #5a3b0a;
-  --color-accent-900: #3a270d;
+  --color-accent-100: #eef6ff;
+  --color-accent-200: #d6ebff;
+  --color-accent-300: #b5d9fd;
+  --color-accent-400: #94bce3;
+  --color-accent-500: #749dc4;
+  --color-accent-600: #597ea3;
+  --color-accent-700: #416180;
+  --color-accent-800: #2c455d;
+  --color-accent-900: #1d2d3d;
 
-  --font-heading: "Cormorant Garamond", system-ui, sans-serif;
+  --font-heading: "Barlow Condensed", system-ui, sans-serif;
   --font-heading-weight: 600;
-  --font-body: "Lora", system-ui, sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
 
   --space-1: 4.6px;
   --space-2: 9.2px;
@@ -56,13 +58,15 @@
 /* Dark theme: applies when the OS prefers dark (unless the user picked
    light explicitly), or always when the user picked dark via the toggle. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) { --color-bg: #1c1a19; --color-surface: #262322; --color-text: #ede9e6; --color-accent: #d19a4a; --color-divider: color-mix(in srgb, #ede9e6 16%, transparent);
-    --color-neutral-100: #201e1d; --color-neutral-200: #2a2726; --color-neutral-300: #3a3634; --color-neutral-400: #4d4845; --color-neutral-500: #635d59; --color-neutral-600: #7d7772; --color-neutral-700: #9a938d; --color-neutral-800: #bcb5ae; --color-neutral-900: #ede9e6;
-    --color-accent-100: #3a2c14; --color-accent-200: #4a3818; --color-accent-300: #5c451c; --color-accent-400: #8a6428; --color-accent-500: #b3853a; --color-accent-600: #d19a4a; --color-accent-700: #e0ac5e; --color-accent-800: #f0c98a; --color-accent-900: #fff3e4; }
+  :root:not([data-theme="light"]) { --color-bg: #14171a; --color-surface: #1a1e22; --color-text: #dfe3e7; --color-accent: #749dc4; --color-divider: color-mix(in srgb, #dfe3e7 14%, transparent);
+    --color-neutral-100: #1b1f22; --color-neutral-200: #24282c; --color-neutral-300: #31363a; --color-neutral-400: #4a4f53; --color-neutral-500: #6a6f73; --color-neutral-600: #8d9296; --color-neutral-700: #b1b5b9; --color-neutral-800: #cfd3d6; --color-neutral-900: #e8ebee;
+    --color-accent-100: #1d2d3d; --color-accent-200: #2c455d; --color-accent-300: #416180; --color-accent-400: #597ea3; --color-accent-500: #749dc4; --color-accent-600: #94bce3; --color-accent-700: #b5d9fd; --color-accent-800: #d6ebff; --color-accent-900: #eef6ff;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.5); --shadow-md: 0 3px 10px rgba(0,0,0,.5); --shadow-lg: 0 12px 32px rgba(0,0,0,.6); }
 }
-:root[data-theme="dark"] { --color-bg: #1c1a19; --color-surface: #262322; --color-text: #ede9e6; --color-accent: #d19a4a; --color-divider: color-mix(in srgb, #ede9e6 16%, transparent);
-  --color-neutral-100: #201e1d; --color-neutral-200: #2a2726; --color-neutral-300: #3a3634; --color-neutral-400: #4d4845; --color-neutral-500: #635d59; --color-neutral-600: #7d7772; --color-neutral-700: #9a938d; --color-neutral-800: #bcb5ae; --color-neutral-900: #ede9e6;
-  --color-accent-100: #3a2c14; --color-accent-200: #4a3818; --color-accent-300: #5c451c; --color-accent-400: #8a6428; --color-accent-500: #b3853a; --color-accent-600: #d19a4a; --color-accent-700: #e0ac5e; --color-accent-800: #f0c98a; --color-accent-900: #fff3e4; }
+:root[data-theme="dark"] { --color-bg: #14171a; --color-surface: #1a1e22; --color-text: #dfe3e7; --color-accent: #749dc4; --color-divider: color-mix(in srgb, #dfe3e7 14%, transparent);
+  --color-neutral-100: #1b1f22; --color-neutral-200: #24282c; --color-neutral-300: #31363a; --color-neutral-400: #4a4f53; --color-neutral-500: #6a6f73; --color-neutral-600: #8d9296; --color-neutral-700: #b1b5b9; --color-neutral-800: #cfd3d6; --color-neutral-900: #e8ebee;
+  --color-accent-100: #1d2d3d; --color-accent-200: #2c455d; --color-accent-300: #416180; --color-accent-400: #597ea3; --color-accent-500: #749dc4; --color-accent-600: #94bce3; --color-accent-700: #b5d9fd; --color-accent-800: #d6ebff; --color-accent-900: #eef6ff;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.5); --shadow-md: 0 3px 10px rgba(0,0,0,.5); --shadow-lg: 0 12px 32px rgba(0,0,0,.6); }
 
 body { transition: background-color 150ms, color 150ms; }
 
@@ -109,9 +113,9 @@ figcaption { font-size: 11px; margin-top: var(--space-1); color: color-mix(in sr
   border-radius: var(--radius-md);
 }
 .btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.btn-primary { color: var(--color-accent); border-color: var(--color-accent); }
-.btn-primary:hover { background: color-mix(in srgb, var(--color-accent) 12%, transparent); color: var(--color-accent); }
-.btn-primary:active { background: color-mix(in srgb, var(--color-accent) 22%, transparent); }
+.btn-primary { background: var(--color-accent); color: var(--color-bg); border-color: var(--color-accent); }
+.btn-primary:hover { background: var(--color-accent-600); color: var(--color-bg); }
+.btn-primary:active { background: var(--color-accent-700); }
 .btn-secondary { border-color: var(--color-divider); }
 .btn-secondary:hover { background: color-mix(in srgb, var(--color-text) 7%, transparent); color: var(--color-text); }
 .btn-secondary:active { background: color-mix(in srgb, var(--color-text) 14%, transparent); }
@@ -163,10 +167,10 @@ fieldset legend { font-size: 12px; color: color-mix(in srgb, var(--color-text) 7
   border-bottom: 1px solid var(--color-divider); position: sticky; top: 0; z-index: 10;
   background: color-mix(in srgb, var(--color-bg) 92%, transparent); backdrop-filter: blur(6px);
 }
-.nav-brand { display: flex; align-items: center; gap: 8px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 18px; margin-right: auto; color: inherit; }
+.nav-brand { display: flex; align-items: center; gap: 8px; font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 17px; letter-spacing: .06em; text-transform: uppercase; margin-right: auto; color: inherit; }
 .nav-brand .rule { width: 22px; height: 1px; background: var(--color-accent); }
-.nav a { color: inherit; font-size: 14px; }
-.nav a:hover, .nav a[aria-current='page'] { color: var(--color-accent); }
+.nav a { color: color-mix(in srgb, var(--color-text) 58%, transparent); font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 15px; letter-spacing: .05em; text-transform: uppercase; border-bottom: 2px solid transparent; }
+.nav a:hover, .nav a[aria-current='page'] { color: var(--color-text); border-bottom-color: var(--color-accent); }
 .nav .muted-link { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--color-neutral-700); }
 .nav .who { display: inline-flex; align-items: center; gap: 12px; font-size: 13px; }
 .theme-toggle {
@@ -421,19 +425,18 @@ dialog:not([open]) { display: none !important; }
 
 /* — footer — */
 footer.site-footer {
-  background: #232120; color: var(--color-neutral-200); padding: 44px 48px 36px;
+  border-top: 1px solid var(--color-divider);
+  background: var(--color-bg); color: var(--color-text); padding: 44px 48px 36px;
   position: relative; overflow: hidden; margin-top: auto;
-  background-image: radial-gradient(circle, rgba(248, 244, 244, .07) 1px, transparent 1.3px);
-  background-size: 9px 9px;
 }
 .footer-inner { position: relative; max-width: 1084px; margin: 0 auto; display: flex; gap: 64px; align-items: flex-start; flex-wrap: wrap; }
 .footer-brand { flex: 1; min-width: 200px; }
-.footer-brand .name { font-family: var(--font-heading); font-weight: 600; font-size: 20px; color: #f8f4f4; }
-.footer-brand p { font-size: 12.5px; color: var(--color-neutral-400); max-width: 280px; margin-top: 8px; }
+.footer-brand .name { font-family: var(--font-heading); font-weight: 600; font-size: 17px; letter-spacing: .08em; text-transform: uppercase; }
+.footer-brand p { font-size: 12.5px; color: color-mix(in srgb, var(--color-text) 55%, transparent); max-width: 280px; margin-top: 8px; }
 .footer-col { display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
-.footer-col .col-title { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent-400); margin-bottom: 4px; }
-.footer-col a { color: var(--color-neutral-300); }
-.footer-col a:hover { color: var(--color-accent-300); }
+.footer-col .col-title { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--color-accent); margin-bottom: 4px; }
+.footer-col a { color: color-mix(in srgb, var(--color-text) 70%, transparent); }
+.footer-col a:hover { color: var(--color-accent); }
 
 body { display: flex; flex-direction: column; min-height: 100vh; }
 main { flex: 1; }
@@ -477,3 +480,53 @@ main { flex: 1; }
   .print-date { font-family: var(--font-body); font-size: 11px; color: #555; }
   * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
+
+/* — Industry blueprint frame — square wireframe objects site-wide — */
+.docs-hero {
+  border-bottom: 1px solid var(--color-divider);
+  background:
+    repeating-linear-gradient(to right, transparent 0 119px, var(--color-divider) 119px 120px),
+    repeating-linear-gradient(to bottom, transparent 0 119px, var(--color-divider) 119px 120px);
+}
+.blueprint { position: relative; border: 1px solid var(--color-divider); border-radius: 0; }
+.blueprint > .corner {
+  position: absolute; width: 11px; height: 11px; pointer-events: none;
+  color: color-mix(in srgb, var(--color-text) 55%, transparent);
+}
+.blueprint > .corner::before, .blueprint > .corner::after { content: ""; position: absolute; background: currentColor; }
+.blueprint > .corner::before { left: 5px; top: 0; width: 1px; height: 100%; }
+.blueprint > .corner::after  { top: 5px; left: 0; width: 100%; height: 1px; }
+.blueprint > .corner.tl { top: -6px; left: -6px; }
+.blueprint > .corner.tr { top: -6px; right: -6px; }
+.blueprint > .corner.bl { bottom: -6px; left: -6px; }
+.blueprint > .corner.br { bottom: -6px; right: -6px; }
+.blueprint-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 26px; }
+
+.tag-outline { border: 1px solid var(--color-accent); color: var(--color-accent); background: transparent; }
+
+/* blueprint frame: cards/buttons/inputs/tags are square, transparent,
+   hairline-bordered — the DS's closing override block, applied globally. */
+.card, .btn, .input, .tag, .stat-tile { border-radius: 0; }
+.card, .stat-tile { background: transparent; border: 1px solid var(--color-divider); }
+.btn { border: 1px solid var(--color-divider); }
+.btn-primary { border-color: var(--color-accent); }
+.btn-ghost { border-color: transparent; }
+
+.chip { font-size: 12.5px; padding: 5px 12px; border: 1px solid var(--color-divider); background: transparent; color: inherit; cursor: pointer; border-radius: 0; }
+.chip.active { border-color: var(--color-accent); background: var(--color-accent-100); color: var(--color-accent-800); }
+
+.doc-toc { position: sticky; top: 68px; padding: var(--space-4) 0; font-size: 13px; }
+.doc-toc a { display: block; padding: 4px 12px; text-decoration: none; border-left: 2px solid transparent; margin-left: -1px; color: color-mix(in srgb, var(--color-text) 70%, transparent); }
+.doc-toc a:hover { color: var(--color-accent-700); }
+.doc-sidebar { position: sticky; top: 68px; padding: var(--space-4) 0; border-right: 1px solid var(--color-divider); }
+.doc-sidebar a { display: block; padding: 5px 12px; font-size: 13.5px; text-decoration: none; border-left: 2px solid var(--color-divider); color: color-mix(in srgb, var(--color-text) 70%, transparent); }
+.doc-sidebar a:hover, .doc-sidebar a[aria-current='page'] { border-left-color: var(--color-accent); color: var(--color-accent-700); }
+
+.doc-body table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: var(--space-3) 0; }
+.doc-body th, .doc-body td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--color-divider); }
+.doc-body code { background: var(--color-neutral-100); padding: 1px 5px; border-radius: 3px; font-size: 12.5px; }
+.doc-body pre { background: var(--color-accent-900); color: var(--color-accent-100); padding: 16px 18px; font-size: 13px; line-height: 1.6; overflow-x: auto; font-family: ui-monospace, Menlo, monospace; }
+.doc-body pre code { background: none; padding: 0; }
+
+/* .docs-app kept as a harmless hook in templates — the Industry palette is
+   global now, no scoped override needed. */

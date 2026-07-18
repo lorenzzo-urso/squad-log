@@ -2,6 +2,19 @@
 
 Registro do que mudou no próprio Registro da Equipe, por versão.
 
+## 2026-07-18
+
+- **Redesign completo — sistema visual "Industry"**: novo padrão vindo do projeto de design
+  "Estética Palantir" (Claude Design), aplicado ao site inteiro. Barlow Condensed + Barlow no
+  lugar de Cormorant Garamond + Lora, paleta azul-aço (clara e escura) no lugar da terrosa,
+  componentes quadrados com borda fina e marcas de registro estilo blueprint. O visual anterior
+  ("Classical") fica no histórico do git.
+- **Central de Docs** (`/central-de-docs`): página hub reunindo Tutoriais (público), Base de
+  conhecimento (privado) e Aprendizado, com lista de docs atualizados recentemente.
+- **Base de conhecimento e Tutoriais**: docs em markdown versionado em git (`kb/publico/` e
+  `kb/privado/<area>/`), visibilidade determinada pela pasta, front-matter YAML, índice
+  automático por seção (`##`) e barra lateral com os outros docs da área.
+
 ## 2026-07-15
 
 - **Fix: capa sobrepõe texto nos cards "Recentes"**: imagens de capa mais altas (perto de quadradas ou verticais) vazavam do card na grade da Timeline e ficavam por cima do título/resumo. `.post-cover` agora recorta a imagem do mesmo jeito que o card em destaque (`overflow: hidden` + imagem absoluta), então ela nunca ultrapassa a área reservada.

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Tutoriais{% endblock %}
+{% block content %}
+<div class="docs-app">
+<main class="container" style="padding-top:48px;padding-bottom:72px">
+<h6 style="color:var(--color-accent-700)">Público · rede interna</h6>
+<h1 style="margin-bottom:6px">Tutoriais</h1>
+<p class="text-muted" style="margin-top:-6px">como fazer coisas comuns, sem precisar perguntar pro squad</p>
+
+<form class="board-filters" method="get" action="/tutoriais">
+    <input class="input" type="search" name="q" value="{{ query }}" placeholder="Buscar…">
+    <button type="submit" class="btn btn-secondary">Buscar</button>
+</form>
+
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 26px">
+    <a href="/tutoriais{% if query %}?q={{ query }}{% endif %}" class="chip {% if not tag %}active{% endif %}">Todas</a>
+    {% for t in all_tags %}
+    <a href="/tutoriais?tag={{ t }}{% if query %}&q={{ query }}{% endif %}" class="chip {% if tag == t %}active{% endif %}">{{ t }}</a>
+    {% endfor %}
+</div>
+
+<div class="blueprint-grid">
+    {% for doc in docs %}
+    <a href="/tutoriais/{{ doc.slug }}" class="blueprint" style="padding:20px;display:flex;flex-direction:column;gap:9px;text-decoration:none;color:inherit">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <span class="text-muted tnum" style="font-size:12px">{{ doc.date }}</span>
+        <h4 style="margin:0">{{ doc.title }}</h4>
+        <p class="text-muted" style="font-size:13.5px;margin:0;flex:1">{{ doc.description }}</p>
+        {% if doc.tags %}
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+            {% for t in doc.tags %}<span class="tag tag-accent">{{ t }}</span>{% endfor %}
+        </div>
+        {% endif %}
+    </a>
+    {% else %}
+    <p class="text-muted" style="font-style:italic">Nenhum tutorial ainda.</p>
+    {% endfor %}
+</div>
+</main>
+</div>
+{% endblock %}

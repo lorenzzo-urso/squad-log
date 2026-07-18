@@ -6,6 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+COPY kb ./kb
 COPY CHANGELOG.md .
 
 ENV DB_PATH=/data/db/app.db

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Central de Docs{% endblock %}
+{% block content %}
+<div class="docs-app">
+<section class="docs-hero">
+    <div class="container" style="padding:72px 28px 64px">
+        <div style="max-width:720px;display:flex;flex-direction:column;gap:14px">
+            <h6 style="color:var(--color-accent-700);margin:0">Central de documentação</h6>
+            <h1 style="font-size:44px;margin:0">Tudo que o squad sabe,<br>num lugar só.</h1>
+            <p class="text-muted" style="font-size:16px;max-width:560px;margin:0">Documentação técnica viva, tutoriais para toda a rede e trilhas de aprendizado — versionado em git, revisado com data.</p>
+            <div style="display:flex;gap:12px;margin-top:8px">
+                <a href="/kb" class="btn btn-primary">Explorar a base de conhecimento</a>
+                <a href="/tutoriais" class="btn btn-secondary">Ver tutoriais</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container" style="padding:48px 28px 24px">
+    <div class="blueprint-grid">
+        <a href="/tutoriais" class="blueprint" style="padding:22px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <h4 style="margin:0">Tutoriais</h4>
+            <p class="text-muted" style="font-size:13.5px;margin:0;flex:1">Como fazer coisas comuns, aberto pra toda a rede interna — sem login.</p>
+            <span style="font-size:12px;color:var(--color-accent-700)">{{ tutoriais_count }} tutoriais · público →</span>
+        </a>
+        {% if user %}
+        <a href="/kb" class="blueprint" style="padding:22px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <h4 style="margin:0">Base de conhecimento</h4>
+            <p class="text-muted" style="font-size:13.5px;margin:0;flex:1">Arquitetura, processos e decisões por área — documento vivo, com data de revisão visível.</p>
+            <span style="font-size:12px;color:var(--color-accent-700)">{{ areas_count }} áreas · privado →</span>
+        </a>
+        {% endif %}
+        <a href="/aprendizado" class="blueprint" style="padding:22px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px">
+            <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+            <h4 style="margin:0">Aprendizado</h4>
+            <p class="text-muted" style="font-size:13.5px;margin:0;flex:1">Trilhas, cursos e leituras do squad — o que cada pessoa está estudando.</p>
+            <span style="font-size:12px;color:var(--color-accent-700)">ver trilhas →</span>
+        </a>
+    </div>
+</section>
+
+{% if recentes %}
+<section class="container" style="padding:32px 28px 72px">
+    <h6 style="margin-bottom:14px">Atualizado recentemente</h6>
+    <div style="border-top:1px solid var(--color-divider)">
+        {% for r in recentes %}
+        <a href="{{ r.url }}" style="display:grid;grid-template-columns:110px 150px 1fr auto;gap:18px;align-items:baseline;padding:13px 4px;border-bottom:1px solid var(--color-divider);text-decoration:none;color:inherit">
+            <span class="text-muted tnum" style="font-size:12.5px">{{ r.date }}</span>
+            <span class="tag tag-outline" style="justify-self:start">{{ r.cat }}</span>
+            <span style="font-size:14.5px">{{ r.title }}</span>
+            <span style="color:var(--color-accent-700);font-size:13px">→</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+</div>
+{% endblock %}

@@ -21,6 +21,7 @@
         <a href="/roadmap" {% if request.url.path.startswith('/roadmap') %}aria-current="page"{% endif %}>Roadmap</a>
         <a href="/aprendizado" {% if request.url.path.startswith('/aprendizado') %}aria-current="page"{% endif %}>Aprendizado</a>
         <a href="/dashboard" {% if request.url.path.startswith('/dashboard') %}aria-current="page"{% endif %}>Dashboard</a>
+        <a href="/central-de-docs" {% if request.url.path.startswith('/central-de-docs') or request.url.path.startswith('/tutoriais') or request.url.path.startswith('/kb') %}aria-current="page"{% endif %}>Docs</a>
         {% if user %}<a href="/radar" {% if request.url.path.startswith('/radar') %}aria-current="page"{% endif %}>Meu radar</a>{% endif %}
         <button type="button" class="theme-toggle" id="theme-toggle" title="Alternar tema claro/escuro" aria-label="Alternar tema claro/escuro">◐</button>
         {% if user %}

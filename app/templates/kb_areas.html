@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Base de conhecimento{% endblock %}
+{% block content %}
+<div class="docs-app">
+<main class="container" style="padding-top:48px;padding-bottom:72px">
+<h6 style="color:var(--color-accent-700)">Privado · requer login</h6>
+<h1 style="margin-bottom:6px">Base de conhecimento</h1>
+<p class="text-muted" style="margin-top:-6px">documentação técnica viva do squad, por área. Visibilidade é estrutural — o que está aqui nunca aparece no lado público.</p>
+
+<div class="blueprint-grid" style="margin-top:30px">
+    {% for area in areas %}
+    <a href="/kb/{{ area.slug }}" class="blueprint" style="padding:22px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:10px">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="card-title">{{ area.title }}</div>
+        <p class="text-muted" style="font-size:13.5px;margin:0;flex:1">{{ area.description }}</p>
+    </a>
+    {% else %}
+    <p class="text-muted" style="font-style:italic">Nenhuma área documentada ainda.</p>
+    {% endfor %}
+</div>
+</main>
+</div>
+{% endblock %}

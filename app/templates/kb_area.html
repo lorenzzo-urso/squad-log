@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ index.title if index else area }}{% endblock %}
+{% block content %}
+<div class="docs-app">
+<main class="container" style="padding-top:48px;padding-bottom:72px">
+<a href="/kb" class="post-back">← todas as áreas</a>
+<h1 style="margin-bottom:6px">{{ index.title if index else area }}</h1>
+{% if index %}<p class="text-muted" style="margin-top:-6px">{{ index.description }}</p>{% endif %}
+
+<div class="blueprint-grid" style="margin-top:26px">
+    {% for doc in docs %}
+    <a href="/kb/{{ area }}/{{ doc.slug }}" class="blueprint" style="padding:20px;text-decoration:none;color:inherit;display:flex;flex-direction:column;gap:9px">
+        <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+        <div class="card-title">{{ doc.title }}</div>
+        <p class="text-muted" style="font-size:13.5px;margin:0;flex:1">{{ doc.description }}</p>
+        {% if doc.tags %}
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+            {% for t in doc.tags %}<span class="tag tag-accent">{{ t }}</span>{% endfor %}
+        </div>
+        {% endif %}
+    </a>
+    {% else %}
+    <p class="text-muted" style="font-style:italic">Nenhum doc nessa área ainda.</p>
+    {% endfor %}
+</div>
+</main>
+</div>
+{% endblock %}

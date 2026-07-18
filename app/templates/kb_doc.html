@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }}{% endblock %}
+{% block content %}
+<div class="docs-app">
+<main class="container" style="display:grid;grid-template-columns:{% if siblings %}220px minmax(0,1fr){% else %}minmax(0,1fr){% endif %}{% if doc.toc %} 220px{% endif %};gap:40px;align-items:start">
+
+{% if siblings %}
+<aside class="doc-sidebar">
+    <h6 style="font-size:12px;margin-bottom:8px">{{ doc.area }}</h6>
+    {% for s in siblings %}
+    <a href="/kb/{{ doc.area }}/{{ s.slug }}" {% if s.slug == doc.slug %}aria-current="page"{% endif %}>{{ s.title }}</a>
+    {% endfor %}
+</aside>
+{% endif %}
+
+<article class="post-article" style="padding:36px 0 72px">
+    <a href="{{ back_url }}" class="post-back">← {{ back_label }}</a>
+    <h1>{{ doc.title }}</h1>
+    <div class="card-meta tnum">
+        {% if doc.date %}{{ doc.date }} · {% endif %}{% if doc.author %}por {{ doc.author }}{% endif %}
+        {% if doc.revisado_em %}· revisado em {{ doc.revisado_em }}{% endif %}
+    </div>
+    {% if doc.tags %}
+    <div class="card-meta" style="margin-top:6px">
+        {% for t in doc.tags %}<span class="tag tag-accent">{{ t }}</span>{% endfor %}
+    </div>
+    {% endif %}
+    <hr class="hr">
+
+    {% if doc.image %}
+    <figure class="post-article-cover">
+        <img class="plate" src="{{ doc.image }}" alt="">
+    </figure>
+    {% endif %}
+
+    <div class="post-body doc-body">{{ doc.body_html | safe }}</div>
+
+    <div class="post-actions">
+        <a href="{{ back_url }}" class="btn btn-secondary">← {{ back_label }}</a>
+    </div>
+</article>
+
+{% if doc.toc %}
+<aside class="doc-toc">
+    <h6 style="font-size:12px;margin-bottom:8px">Nesta página</h6>
+    {% for t in doc.toc %}
+    <a href="#{{ t.id }}">{{ t.title }}</a>
+    {% endfor %}
+</aside>
+{% endif %}
+
+</main>
+</div>
+{% endblock %}
